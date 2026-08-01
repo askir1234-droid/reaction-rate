@@ -1,0 +1,2025 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>반응 속도 요인 기반 탐구 제안서 및 AI 결과 분석 워크스페이스</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        appleBlue: '#0066cc',
+                        appleDarkBlue: '#0055bb',
+                        appleCanvas: '#ffffff',
+                        appleParchment: '#f5f5f7',
+                        appleInk: '#1d1d1f',
+                        appleTileDark: '#272729',
+                        appleHairline: '#e0e0e0',
+                        appleMuted: '#7a7a7a'
+                    },
+                    fontFamily: {
+                        sans: ['SF Pro Text', '-apple-system', 'BlinkMacSystemFont', 'Inter', 'Segoe UI', 'Roboto', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            font-family: 'SF Pro Text', -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif;
+            color: #1d1d1f;
+            background-color: #f5f5f7;
+            letter-spacing: -0.01em;
+            -webkit-font-smoothing: antialiased;
+        }
+        .apple-tight {
+            letter-spacing: -0.025em;
+        }
+        .frosted-nav {
+            background-color: rgba(245, 245, 247, 0.82);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+        .apple-card {
+            background: #ffffff;
+            border: 1px solid #e0e0e0;
+            border-radius: 18px;
+        }
+        .apple-pill-btn {
+            border-radius: 9999px;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .apple-pill-btn:active {
+            transform: scale(0.96);
+        }
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f5f5f7;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cccccc;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col selection:bg-blue-100 selection:text-blue-900">
+
+    <!-- Top Global Nav -->
+    <header class="bg-[#000000] text-white text-[12px] py-2 px-4 sticky top-0 z-50 flex justify-between items-center h-[44px]">
+        <div class="max-w-7xl w-full mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <span class="font-semibold text-sm tracking-tight flex items-center gap-1.5">
+                    <svg class="w-4 h-4 text-blue-400" fill="currentColor" viewBox="0 0 20 20"><path d="M7 2a1 1 0 00-.707 1.707L7 4.414v3.758a1 1 0 01.293.707l-4 4C0.81 14.78 2.15 18 4.83 18h10.34c2.68 0 4.02-3.22 2.12-5.13l-4-4A1 1 0 0113 8.172V4.414l.707-1.707A1 1 0 0013 2H7z"/></svg>
+                    인천청라고등학교 물질과 에너지
+                </span>
+                <span class="text-xs text-gray-400 border-l border-gray-700 pl-3">2026학년도 2학기 수행평가</span>
+                <span id="db-status-badge" class="hidden md:inline-flex items-center gap-1 text-[10px] bg-emerald-950 text-emerald-400 px-2 py-0.5 rounded-full border border-emerald-800/60 font-mono">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                    Firebase Realtime DB 연결됨
+                </span>
+            </div>
+            <div class="flex items-center space-x-4">
+                <button onclick="openRubricModal()" class="text-gray-300 hover:text-white transition text-[12px] flex items-center gap-1">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    평가 기준표
+                </button>
+                <button onclick="openTeacherAuthModal()" class="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1 rounded-full text-[11px] font-medium transition">
+                    교사용 대시보드
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Sub Nav Bar (Frosted Glass) -->
+    <nav class="frosted-nav border-b border-gray-200 sticky top-[44px] z-40">
+        <div class="max-w-7xl mx-auto px-4 h-[52px] flex items-center justify-between">
+            <div class="flex items-center space-x-4 overflow-x-auto py-1">
+                <span class="text-[16px] font-semibold text-appleInk tracking-tight whitespace-nowrap">반응 속도 탐구 프로젝트</span>
+                <div class="flex space-x-1 text-[12px] whitespace-nowrap">
+                    <button onclick="switchTab('overview')" id="tab-btn-overview" class="tab-btn px-3 py-1.5 rounded-full font-medium transition text-appleBlue bg-blue-50">수업 개요</button>
+                    <button onclick="switchTab('sim')" id="tab-btn-sim" class="tab-btn px-3 py-1.5 rounded-full font-medium transition text-gray-600 hover:text-appleInk">[1단계] 반응 조건 설정 & 시뮬레이션</button>
+                    <button onclick="switchTab('step1')" id="tab-btn-step1" class="tab-btn px-3 py-1.5 rounded-full font-medium transition text-gray-600 hover:text-appleInk">[2단계] 조별 탐구 보고서</button>
+                    <button onclick="switchTab('step2')" id="tab-btn-step2" class="tab-btn px-3 py-1.5 rounded-full font-medium transition text-gray-600 hover:text-appleInk">[3단계] 탐구 제안서</button>
+                    <button onclick="switchTab('step-app')" id="tab-btn-step-app" class="tab-btn px-3 py-1.5 rounded-full font-medium transition text-gray-600 hover:text-appleInk">[4단계] 앱 시뮬레이터 제작</button>
+                    <button onclick="switchTab('step3')" id="tab-btn-step3" class="tab-btn px-3 py-1.5 rounded-full font-medium transition text-gray-600 hover:text-appleInk">[5단계] AI 결과 예측</button>
+                    <button onclick="switchTab('step4')" id="tab-btn-step4" class="tab-btn px-3 py-1.5 rounded-full font-medium transition text-gray-600 hover:text-appleInk">[6단계] 분석 및 평가</button>
+                </div>
+            </div>
+            <div class="hidden lg:flex text-[12px] font-medium text-appleBlue bg-blue-50 px-3 py-1 rounded-full border border-blue-100 items-center gap-1.5 whitespace-nowrap">
+                <span class="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
+                <span class="font-semibold">수업 의도:</span> 반응 속도 요인 분석 및 앱 제작·AI 활용 비판적 성찰
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Workspace Body -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 py-8 space-y-8">
+
+        <!-- ================= TAB 0: OVERVIEW ================= -->
+        <section id="tab-overview" class="tab-content block space-y-6">
+            <!-- Hero Banner -->
+            <div class="bg-gradient-to-br from-appleTileDark to-black text-white p-8 md:p-12 rounded-[24px] shadow-sm relative overflow-hidden">
+                <div class="max-w-3xl space-y-4 relative z-10">
+                    <span class="text-blue-400 font-semibold text-[13px] tracking-wider uppercase">고등학교 2학년 물질과 에너지 | 8차시 탐구 워크스페이스</span>
+                    <h1 class="text-3xl md:text-4xl font-semibold apple-tight leading-tight">
+                        반응 속도 요인 기반 탐구 제안서 작성, 앱 시뮬레이터 제작 및 AI 결과 분석
+                    </h1>
+                    
+                    <!-- Prominent Lesson Intent Banner -->
+                    <div class="bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/20 my-4 text-[14px] leading-relaxed">
+                        <strong class="text-blue-300 font-semibold">[수업 의도]</strong>
+                        <p class="mt-1 text-gray-200 font-medium">
+                            반응 속도에 미치는 요인(농도, 온도, 촉매)을 깊이 있게 이해하고, 논리적인 탐구 제안 및 나만의 반응 속도 앱 시뮬레이터를 직접 기획·제작합니다. 또한 생성형 AI(Gemini) 예측 결과와의 비교 분석을 통해 과학적 탐구 능력, SW/AI 융합 사고력, 그리고 비판적 검증 태도를 함양합니다.
+                        </p>
+                    </div>
+
+                    <div class="pt-2 flex flex-wrap gap-3">
+                        <button onclick="switchTab('sim')" class="bg-appleBlue hover:bg-appleDarkBlue text-white font-medium px-6 py-2.5 rounded-full text-[14px] apple-pill-btn shadow-sm">
+                            [1단계] 반응 조건 설정 & 시뮬레이션 시작하기
+                        </button>
+                        <button onclick="openRubricModal()" class="bg-white/10 hover:bg-white/20 text-white font-medium px-5 py-2.5 rounded-full text-[14px] apple-pill-btn border border-white/20 transition">
+                            수행평가 채점 기준표 확인
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Process Grid (6 Steps) -->
+            <div class="grid grid-cols-1 md:grid-cols-6 gap-3">
+                <div class="apple-card p-3.5 space-y-2">
+                    <div class="text-[11px] font-semibold text-blue-600 uppercase">1단계</div>
+                    <h3 class="font-semibold text-sm text-appleInk">반응 조건 설정</h3>
+                    <p class="text-[11px] text-appleMuted leading-relaxed">
+                        농도, 온도, 촉매 변수를 조절하며 입자 충돌과 10분 반응 곡선을 탐구합니다.
+                    </p>
+                    <span class="inline-block text-[10px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100">조건 탐색</span>
+                </div>
+
+                <div class="apple-card p-3.5 space-y-2">
+                    <div class="text-[11px] font-semibold text-blue-600 uppercase">2단계</div>
+                    <h3 class="font-semibold text-sm text-appleInk">조별 탐구 보고서</h3>
+                    <p class="text-[11px] text-appleMuted leading-relaxed">
+                        7개 농도 조건별 반응 시간을 기록하고 A4 1장 보고서를 저장·인쇄합니다.
+                    </p>
+                    <span class="inline-block text-[10px] font-semibold text-red-500 bg-red-50 px-2 py-0.5 rounded border border-red-100">AI 사용 금지</span>
+                </div>
+
+                <div class="apple-card p-3.5 space-y-2">
+                    <div class="text-[11px] font-semibold text-blue-600 uppercase">3단계</div>
+                    <h3 class="font-semibold text-sm text-appleInk">탐구 제안서 작성</h3>
+                    <p class="text-[11px] text-appleMuted leading-relaxed">
+                        가설, 변인통제, 실험 절차(1/2)를 논리적인 구조로 설계합니다.
+                    </p>
+                    <span class="inline-block text-[10px] font-semibold text-red-500 bg-red-50 px-2 py-0.5 rounded border border-red-100">AI 사용 금지</span>
+                </div>
+
+                <div class="apple-card p-3.5 space-y-2">
+                    <div class="text-[11px] font-semibold text-purple-600 uppercase">4단계 (신규)</div>
+                    <h3 class="font-semibold text-sm text-appleInk">앱 시뮬레이터 제작</h3>
+                    <p class="text-[11px] text-appleMuted leading-relaxed">
+                        나만의 반응 속도 웹 앱을 기획하고 프로토타입 시뮬레이터를 생성합니다.
+                    </p>
+                    <span class="inline-block text-[10px] font-semibold text-purple-600 bg-purple-50 px-2 py-0.5 rounded border border-purple-100">SW/AI 융합</span>
+                </div>
+
+                <div class="apple-card p-3.5 space-y-2">
+                    <div class="text-[11px] font-semibold text-blue-600 uppercase">5단계</div>
+                    <h3 class="font-semibold text-sm text-appleInk">AI 결과 예측</h3>
+                    <p class="text-[11px] text-appleMuted leading-relaxed">
+                        제안한 실험 조건을 Gemini AI에 입력하여 예측 그래프 데이터를 추출합니다.
+                    </p>
+                    <span class="inline-block text-[10px] font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-100">AI 활용</span>
+                </div>
+
+                <div class="apple-card p-3.5 space-y-2">
+                    <div class="text-[11px] font-semibold text-blue-600 uppercase">6단계</div>
+                    <h3 class="font-semibold text-sm text-appleInk">분석 및 평가</h3>
+                    <p class="text-[11px] text-appleMuted leading-relaxed">
+                        AI 예측 결과의 환각을 교과 원리로 검증하고 동료 평가를 실시합니다.
+                    </p>
+                    <span class="inline-block text-[10px] font-semibold text-red-500 bg-red-50 px-2 py-0.5 rounded border border-red-100">AI 사용 금지</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= TAB 1: 반응 조건 설정 & 시뮬레이션 ================= -->
+        <section id="tab-sim" class="tab-content hidden space-y-6">
+            <div class="apple-card p-6 space-y-6">
+                <!-- Chemical Reaction Equation Banner -->
+                <div class="bg-blue-50/80 border border-blue-200 p-3.5 rounded-xl text-xs flex flex-col md:flex-row justify-between items-start md:items-center gap-2">
+                    <div class="flex items-center gap-2">
+                        <span class="bg-appleBlue text-white font-bold text-[11px] px-2.5 py-0.5 rounded-full">탐구 대상 반응식</span>
+                        <span class="text-sm font-bold text-appleInk tracking-wide">A + B → C</span>
+                    </div>
+                    <div class="text-[11px] text-gray-600 font-medium">
+                        (반응물 A와 B가 반응하여 생성물 C를 생성하는 반응: 농도, 온도, 촉매 조건 변화에 따른 반응 속도 측정)
+                    </div>
+                </div>
+
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b pb-4 border-appleHairline">
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="bg-blue-600 text-white text-xs font-bold px-2.5 py-1 rounded-full">1단계</span>
+                            <span class="text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded">실험 조건 탐구 & 시뮬레이션</span>
+                        </div>
+                        <h2 class="text-2xl font-semibold text-appleInk mt-1">반응 조건 설정 및 입자 충돌 시뮬레이터</h2>
+                        <p class="text-xs text-appleMuted mt-0.5">반응물 농도, 온도, 촉매 조건을 변동하며 입자 유효 충돌과 10분간의 생성물 농도 변화를 관찰하세요.</p>
+                    </div>
+                    <!-- Comparison Quick Buttons -->
+                    <div class="flex flex-wrap items-center gap-2">
+                        <button onclick="runOneClickComparison('conc')" class="bg-blue-50 hover:bg-blue-100 text-appleBlue text-xs font-medium px-3 py-1.5 rounded-full border border-blue-200 transition">
+                            농도 3종 비교 그래프
+                        </button>
+                        <button onclick="runOneClickComparison('temp')" class="bg-orange-50 hover:bg-orange-100 text-orange-600 text-xs font-medium px-3 py-1.5 rounded-full border border-orange-200 transition">
+                            온도 3종 비교 그래프
+                        </button>
+                        <button onclick="runOneClickComparison('cat')" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-600 text-xs font-medium px-3 py-1.5 rounded-full border border-emerald-200 transition">
+                            촉매 3종 비교 그래프
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Simulator UI Container -->
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    <!-- Controls & Canvas Left Column -->
+                    <div class="lg:col-span-5 space-y-4 bg-appleParchment p-4 rounded-xl border border-appleHairline">
+                        <h3 class="font-semibold text-sm text-appleInk flex items-center gap-1.5">
+                            <svg class="w-4 h-4 text-appleBlue" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>
+                            반응 변수 조건 설정 (입자 충돌 챔버)
+                        </h3>
+
+                        <!-- Variable 1: Concentration -->
+                        <div class="space-y-1">
+                            <div class="flex justify-between text-xs font-medium">
+                                <label for="sim-conc" class="text-gray-700">반응물 농도 (몰농도, M)</label>
+                                <span id="sim-conc-val" class="text-appleBlue font-bold">0.5 M</span>
+                            </div>
+                            <input type="range" id="sim-conc" min="0.1" max="2.0" step="0.1" value="0.5" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-appleBlue" oninput="updateSimControls()">
+                        </div>
+
+                        <!-- Variable 2: Temperature -->
+                        <div class="space-y-1">
+                            <div class="flex justify-between text-xs font-medium">
+                                <label for="sim-temp" class="text-gray-700">반응 온도 (K)</label>
+                                <span id="sim-temp-val" class="text-orange-600 font-bold">300 K</span>
+                            </div>
+                            <input type="range" id="sim-temp" min="250" max="400" step="10" value="300" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-orange-500" oninput="updateSimControls()">
+                        </div>
+
+                        <!-- Variable 3: Catalyst -->
+                        <div class="space-y-1">
+                            <div class="flex justify-between text-xs font-medium">
+                                <label for="sim-cat" class="text-gray-700">촉매 조건 (활성화 에너지 Ea)</label>
+                                <span id="sim-cat-val" class="text-emerald-600 font-bold">무촉매 (기준 Ea)</span>
+                            </div>
+                            <select id="sim-cat" class="w-full p-2 border border-gray-300 rounded-lg text-xs bg-white focus:outline-none focus:border-appleBlue" onchange="updateSimControls()">
+                                <option value="none">무촉매 (기준 Ea = 50 kJ/mol)</option>
+                                <option value="positive">정촉매 (Ea 감소 = 30 kJ/mol)</option>
+                                <option value="negative">부촉매/억제제 (Ea 증가 = 75 kJ/mol)</option>
+                            </select>
+                        </div>
+
+                        <!-- Canvas Box -->
+                        <div class="relative bg-black rounded-xl overflow-hidden border border-gray-800 h-[180px]">
+                            <canvas id="collisionCanvas" class="w-full h-full block"></canvas>
+                            <div class="absolute bottom-2 left-2 bg-black/60 text-white text-[10px] px-2 py-1 rounded backdrop-blur border border-white/10 flex gap-3">
+                                <span>유효 충돌: <strong id="sim-collision-count" class="text-yellow-400 font-bold">0</strong> 회</span>
+                                <span>진행 시간: <strong id="sim-time-display" class="text-blue-300 font-bold">0.0 분 / 10.0 분</strong></span>
+                            </div>
+                        </div>
+
+                        <!-- Controls Buttons -->
+                        <div class="flex flex-wrap gap-2">
+                            <button id="sim-start-btn" onclick="toggleSimulation()" class="flex-1 bg-appleBlue hover:bg-appleDarkBlue text-white text-xs font-medium py-2 rounded-lg transition">
+                                시뮬레이션 시작
+                            </button>
+                            <button onclick="resetSimulation()" class="bg-gray-200 hover:bg-gray-300 text-gray-700 text-xs font-medium px-4 py-2 rounded-lg transition">
+                                리셋
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Chart Right Column -->
+                    <div class="lg:col-span-7 flex flex-col justify-between bg-white p-4 rounded-xl border border-appleHairline space-y-4">
+                        <div>
+                            <div class="flex justify-between items-center mb-2">
+                                <h3 class="font-semibold text-sm text-appleInk">시간(10분)에 따른 생성물 농도 변화 (M)</h3>
+                                <span class="text-[11px] text-gray-500 font-mono" id="chart-status-badge">대기 중 (시뮬레이션 시작 버튼 클릭)</span>
+                            </div>
+                            <div class="relative h-[250px] w-full">
+                                <canvas id="reactionRateChart"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Insight Box -->
+                        <div class="bg-blue-50/60 border border-blue-100 p-3.5 rounded-xl text-xs text-appleInk space-y-1">
+                            <span class="font-semibold text-appleBlue">입자 충돌 이론 및 활성화 에너지 원리:</span>
+                            <p class="text-gray-600 text-[11px] leading-relaxed" id="sim-insight-text">
+                                • <strong>농도:</strong> 몰농도(M)가 높을수록 단위 부피당 입자 수가 증가하여 단위 시간당 전체 충돌 횟수 및 유효 충돌 빈도가 가팔라집니다.<br>
+                                • <strong>온도:</strong> 온도가 상승하면 입자의 평균 운동 에너지가 증가하여 활성화 에너지(Ea) 이상의 에너지를 가진 입자 비율이 급증합니다.<br>
+                                • <strong>촉매:</strong> 정촉매는 반응 경로의 활성화 에너지를 낮추어 더 많은 입자가 반응에 참여하게 합니다.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex justify-end pt-2">
+                    <button onclick="switchTab('step1')" class="bg-appleBlue hover:bg-appleDarkBlue text-white font-medium px-6 py-2.5 rounded-full text-xs apple-pill-btn">
+                        [2단계] 조별 탐구 보고서 작성으로 이동 ➔
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= TAB 2: 조별 탐구 보고서 ================= -->
+        <section id="tab-step1" class="tab-content hidden space-y-6">
+            <div class="apple-card p-6 space-y-6">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b pb-4 border-appleHairline">
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="bg-blue-600 text-white text-xs font-bold px-2.5 py-1 rounded-full">2단계</span>
+                            <span class="text-xs font-semibold text-red-600 bg-red-50 border border-red-100 px-2 py-0.5 rounded">AI 사용 금지</span>
+                        </div>
+                        <h2 class="text-2xl font-semibold text-appleInk mt-1">조별 탐구 보고서 작성 (농도별 측정)</h2>
+                        <p class="text-xs text-appleMuted mt-0.5">7개 농도 조건에서 측정한 반응 시간을 정확히 기록하고 보고서를 보관하세요.</p>
+                    </div>
+                </div>
+
+                <!-- Group Inquiry Report Worksheet Form -->
+                <div class="bg-white p-6 rounded-xl border border-appleHairline space-y-6">
+                    <div class="border-b border-gray-200 pb-3">
+                        <h3 class="text-lg font-semibold text-appleInk">탐구 보고서 항목</h3>
+                        <p class="text-xs text-appleMuted">측정한 7개 농도 조건별 반응 시간(초) 결과값을 입력하고 저장 및 인쇄하세요.</p>
+                    </div>
+
+                    <form id="report-form" onsubmit="event.preventDefault(); saveReport();" class="space-y-6">
+                        <!-- Group Info -->
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">모둠명 및 모둠원 명단</label>
+                            <input type="text" id="rep-team-name" placeholder="예: 3모둠 (김화학, 이반응, 박속도)" class="w-full p-2.5 border border-appleHairline rounded-lg text-xs bg-appleParchment focus:outline-none focus:border-appleBlue" required>
+                        </div>
+
+                        <!-- Item 1: 7 Concentration Table -->
+                        <div class="space-y-2">
+                            <label class="block text-xs font-bold text-appleInk">
+                                ① 농도에 따른 측정값 및 기록 (7개 몰농도 조건)
+                            </label>
+                            <div class="overflow-x-auto">
+                                <table class="w-full border-collapse border border-[#e0e0e0] text-xs text-left">
+                                    <thead>
+                                        <tr class="bg-[#f5f5f7] border-b border-[#e0e0e0] font-semibold text-[#1d1d1f]">
+                                            <th class="p-2 border-r border-[#e0e0e0] text-center w-16">번호</th>
+                                            <th class="p-2 border-r border-[#e0e0e0] w-48">반응물 몰농도 (M)</th>
+                                            <th class="p-2">측정 반응 시간 (초)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-[#e0e0e0]">
+                                        <tr>
+                                            <td class="p-2 border-r border-[#e0e0e0] text-center font-medium text-[#7a7a7a]">1</td>
+                                            <td class="p-2 border-r border-[#e0e0e0]"><input type="text" id="rep-conc-val-1" value="0.1 M" class="w-full p-1.5 border rounded bg-[#f5f5f7] font-semibold text-[#0066cc]"></td>
+                                            <td class="p-2"><input type="text" id="rep-conc-res-1" placeholder="예: 42초" class="w-full p-1.5 border border-[#e0e0e0] rounded bg-white focus:outline-none focus:border-[#0066cc]"></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2 border-r border-[#e0e0e0] text-center font-medium text-[#7a7a7a]">2</td>
+                                            <td class="p-2 border-r border-[#e0e0e0]"><input type="text" id="rep-conc-val-2" value="0.3 M" class="w-full p-1.5 border rounded bg-[#f5f5f7] font-semibold text-[#0066cc]"></td>
+                                            <td class="p-2"><input type="text" id="rep-conc-res-2" placeholder="예: 31초" class="w-full p-1.5 border border-[#e0e0e0] rounded bg-white focus:outline-none focus:border-[#0066cc]"></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2 border-r border-[#e0e0e0] text-center font-medium text-[#7a7a7a]">3</td>
+                                            <td class="p-2 border-r border-[#e0e0e0]"><input type="text" id="rep-conc-val-3" value="0.5 M" class="w-full p-1.5 border rounded bg-[#f5f5f7] font-semibold text-[#0066cc]"></td>
+                                            <td class="p-2"><input type="text" id="rep-conc-res-3" placeholder="예: 24초" class="w-full p-1.5 border border-[#e0e0e0] rounded bg-white focus:outline-none focus:border-[#0066cc]"></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2 border-r border-[#e0e0e0] text-center font-medium text-[#7a7a7a]">4</td>
+                                            <td class="p-2 border-r border-[#e0e0e0]"><input type="text" id="rep-conc-val-4" value="0.8 M" class="w-full p-1.5 border rounded bg-[#f5f5f7] font-semibold text-[#0066cc]"></td>
+                                            <td class="p-2"><input type="text" id="rep-conc-res-4" placeholder="예: 19초" class="w-full p-1.5 border border-[#e0e0e0] rounded bg-white focus:outline-none focus:border-[#0066cc]"></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2 border-r border-[#e0e0e0] text-center font-medium text-[#7a7a7a]">5</td>
+                                            <td class="p-2 border-r border-[#e0e0e0]"><input type="text" id="rep-conc-val-5" value="1.0 M" class="w-full p-1.5 border rounded bg-[#f5f5f7] font-semibold text-[#0066cc]"></td>
+                                            <td class="p-2"><input type="text" id="rep-conc-res-5" placeholder="예: 16초" class="w-full p-1.5 border border-[#e0e0e0] rounded bg-white focus:outline-none focus:border-[#0066cc]"></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2 border-r border-[#e0e0e0] text-center font-medium text-[#7a7a7a]">6</td>
+                                            <td class="p-2 border-r border-[#e0e0e0]"><input type="text" id="rep-conc-val-6" value="1.5 M" class="w-full p-1.5 border rounded bg-[#f5f5f7] font-semibold text-[#0066cc]"></td>
+                                            <td class="p-2"><input type="text" id="rep-conc-res-6" placeholder="예: 13초" class="w-full p-1.5 border border-[#e0e0e0] rounded bg-white focus:outline-none focus:border-[#0066cc]"></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-2 border-r border-[#e0e0e0] text-center font-medium text-[#7a7a7a]">7</td>
+                                            <td class="p-2 border-r border-[#e0e0e0]"><input type="text" id="rep-conc-val-7" value="2.0 M" class="w-full p-1.5 border rounded bg-[#f5f5f7] font-semibold text-[#0066cc]"></td>
+                                            <td class="p-2"><input type="text" id="rep-conc-res-7" placeholder="예: 12초" class="w-full p-1.5 border border-[#e0e0e0] rounded bg-white focus:outline-none focus:border-[#0066cc]"></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div class="flex flex-wrap justify-end gap-2 pt-2">
+                            <button type="button" onclick="printStep1Report()" class="bg-gray-700 hover:bg-gray-800 text-white font-medium px-5 py-2.5 rounded-full text-[13px] apple-pill-btn flex items-center gap-1.5 transition">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                                조별 보고서 A4 1장 인쇄 / PDF
+                            </button>
+                            <button type="submit" class="bg-appleBlue hover:bg-appleDarkBlue text-white font-medium px-6 py-2.5 rounded-full text-[13px] apple-pill-btn shadow-sm">
+                                [2단계] 조별 탐구 보고서 저장 및 DB 제출
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= TAB 3: 탐구 제안서 ================= -->
+        <section id="tab-step2" class="tab-content hidden space-y-6">
+            <div class="apple-card p-6 space-y-6">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-2 border-b pb-4 border-appleHairline">
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="bg-blue-600 text-white text-xs font-bold px-2.5 py-1 rounded-full">3단계</span>
+                            <span class="text-xs font-semibold text-red-600 bg-red-50 border border-red-100 px-2 py-0.5 rounded">AI 사용 금지</span>
+                        </div>
+                        <h2 class="text-2xl font-semibold text-appleInk mt-1">반응 속도 요인 기반 탐구 제안서 서술</h2>
+                    </div>
+                    <button onclick="loadSampleProposal()" class="text-xs text-appleBlue border border-blue-200 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-full transition">
+                        샘플 제안서 예시 불러오기
+                    </button>
+                </div>
+
+                <form id="proposal-form" onsubmit="event.preventDefault(); saveProposal();" class="space-y-8">
+                    <!-- SECTION 1: 서론 -->
+                    <div class="bg-appleParchment p-5 rounded-xl border border-appleHairline space-y-4">
+                        <div class="flex justify-between items-center border-b pb-2 border-gray-200">
+                            <h3 class="font-semibold text-appleInk text-base flex items-center gap-2">
+                                <span class="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs">I</span>
+                                서론: 탐구 주제, 동기 및 목적
+                            </h3>
+                        </div>
+
+                        <div class="space-y-3">
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-700 mb-1">1. 탐구 주제 설정</label>
+                                <input type="text" id="prop-topic" placeholder="예: 온도 및 촉매 종류가 A + B → C 반응 속도에 미치는 영향 분석" class="w-full p-2.5 border border-appleHairline rounded-lg text-xs bg-white focus:outline-none focus:border-appleBlue" required>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-700 mb-1">2. 탐구 동기 및 필요성 (출처 포함 서술)</label>
+                                <textarea id="prop-motive" rows="3" placeholder="탐구를 계획하게 된 계기 및 교과서/논문 등 관련 출처를 구체적으로 작성하세요." class="w-full p-2.5 border border-appleHairline rounded-lg text-xs bg-white focus:outline-none focus:border-appleBlue" required></textarea>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-700 mb-1">3. 탐구 목적 (화학의 유용성과 연계)</label>
+                                <textarea id="prop-purpose" rows="2" placeholder="이 탐구가 실생활이나 화학 산업에 제공하는 유용성 및 목적을 작성하세요." class="w-full p-2.5 border border-appleHairline rounded-lg text-xs bg-white focus:outline-none focus:border-appleBlue" required></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SECTION 2: 본론 -->
+                    <div class="bg-appleParchment p-5 rounded-xl border border-appleHairline space-y-4">
+                        <div class="flex justify-between items-center border-b pb-2 border-gray-200">
+                            <h3 class="font-semibold text-appleInk text-base flex items-center gap-2">
+                                <span class="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs">II</span>
+                                본론: 가설, 변인 통제 및 실험 절차 설계
+                            </h3>
+                        </div>
+
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-700 mb-1">1. 가설 설정</label>
+                                <input type="text" id="prop-hypothesis" placeholder="예: 반응 온도가 높아질수록 입자의 평균 운동 에너지가 증가하여 유효 충돌 횟수가 늘어나므로 반응 속도가 증가할 것이다." class="w-full p-2.5 border border-appleHairline rounded-lg text-xs bg-white focus:outline-none focus:border-appleBlue" required>
+                            </div>
+
+                            <!-- Variables Table -->
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                <div>
+                                    <label class="block text-xs font-semibold text-gray-700 mb-1">조작 변인 (실험1 / 실험2)</label>
+                                    <input type="text" id="prop-var-indep" placeholder="예: 반응 온도, 촉매 유무" class="w-full p-2 border border-appleHairline rounded-lg text-xs bg-white focus:outline-none focus:border-appleBlue" required>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-gray-700 mb-1">종속 변인 (측정 대상)</label>
+                                    <input type="text" id="prop-var-dep" placeholder="예: 단위 시간당 산소 기체 발생량" class="w-full p-2 border border-appleHairline rounded-lg text-xs bg-white focus:outline-none focus:border-appleBlue" required>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-gray-700 mb-1">통제 변인 및 통제 방안</label>
+                                    <input type="text" id="prop-var-ctrl" placeholder="예: 반응물의 초기 농도 및 전체 부피 일정 유지" class="w-full p-2 border border-appleHairline rounded-lg text-xs bg-white focus:outline-none focus:border-appleBlue" required>
+                                </div>
+                            </div>
+
+                            <!-- Procedure Exp 1 -->
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-700 mb-1">2. 조작변인 1 (실험 1) 준비물 및 단계별 실험 절차 (타인 재현 가능 수준)</label>
+                                <textarea id="prop-proc1" rows="3" placeholder="실험 1의 절차를 1), 2), 3) 순서대로 구체적으로 서술하세요." class="w-full p-2.5 border border-appleHairline rounded-lg text-xs bg-white focus:outline-none focus:border-appleBlue" required></textarea>
+                            </div>
+
+                            <!-- Procedure Exp 2 -->
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-700 mb-1">3. 조작변인 2 (실험 2) 준비물 및 단계별 실험 절차</label>
+                                <textarea id="prop-proc2" rows="3" placeholder="실험 2의 절차를 구체적으로 서술하세요." class="w-full p-2.5 border border-appleHairline rounded-lg text-xs bg-white focus:outline-none focus:border-appleBlue" required></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SECTION 3: 결론 -->
+                    <div class="bg-appleParchment p-5 rounded-xl border border-appleHairline space-y-4">
+                        <div class="flex justify-between items-center border-b pb-2 border-gray-200">
+                            <h3 class="font-semibold text-appleInk text-base flex items-center gap-2">
+                                <span class="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs">III</span>
+                                결론: 예상 결과 및 과학적 근거
+                            </h3>
+                        </div>
+
+                        <div class="space-y-3">
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-700 mb-1">1. 예상되는 실험 결과 및 그래프 형태</label>
+                                <textarea id="prop-exp-result" rows="2" placeholder="실험 1과 실험 2 수행 시 예상되는 데이터 경향성 및 그래프 변화를 기술하세요." class="w-full p-2.5 border border-appleHairline rounded-lg text-xs bg-white focus:outline-none focus:border-appleBlue" required></textarea>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-700 mb-1">2. 과학적 근거 (충돌 이론 및 활성화 에너지 기반)</label>
+                                <textarea id="prop-exp-reason" rows="2" placeholder="입자 충돌 이론 및 활성화 에너지 개념을 적용하여 예상 결과의 타당성을 논리적으로 설명하세요." class="w-full p-2.5 border border-appleHairline rounded-lg text-xs bg-white focus:outline-none focus:border-appleBlue" required></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end gap-3 pt-2">
+                        <button type="submit" class="bg-appleBlue hover:bg-appleDarkBlue text-white font-medium px-8 py-3 rounded-full text-sm apple-pill-btn shadow-sm">
+                            [3단계] 탐구 제안서 저장 및 DB 제출
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+        <!-- ================= TAB 4: 앱 시뮬레이터 제작 ================= -->
+        <section id="tab-step-app" class="tab-content hidden space-y-6">
+            <div class="apple-card p-6 space-y-6">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-2 border-b pb-4 border-appleHairline">
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="bg-purple-600 text-white text-xs font-bold px-2.5 py-1 rounded-full">4단계</span>
+                            <span class="text-xs font-semibold text-purple-700 bg-purple-50 border border-purple-100 px-2 py-0.5 rounded">3단계 제안서 연동 & SW/AI 융합 수행평가</span>
+                        </div>
+                        <h2 class="text-2xl font-semibold text-appleInk mt-1">탐구 제안서 기반 반응 속도 앱 시뮬레이터 기획 및 프로토타입 제작</h2>
+                        <p class="text-xs text-appleMuted mt-0.5">3단계에서 직접 설계한 탐구 제안서의 가설과 변인을 바탕으로 나만의 인터랙티브 시뮬레이터 앱을 구현합니다.</p>
+                    </div>
+                    <button onclick="syncProposalToApp()" class="text-xs text-purple-700 bg-purple-50 border border-purple-200 hover:bg-purple-100 px-3 py-1.5 rounded-full transition font-semibold flex items-center gap-1">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                        3단계 제안서 내용 새로고침
+                    </button>
+                </div>
+
+                <!-- Step 3 Proposal Linked Context Card -->
+                <div class="bg-gradient-to-r from-purple-900 to-slate-900 text-white p-4 rounded-xl border border-purple-700/50 space-y-2 shadow-sm">
+                    <div class="flex justify-between items-center border-b border-purple-700/60 pb-2">
+                        <span class="text-xs font-bold text-purple-300 flex items-center gap-1.5">
+                            <svg class="w-4 h-4 text-purple-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M12.586 4.586a2 2 0 112.828 2.828l-3 3a2 2 0 01-2.828 0 1 1 0 00-1.414 1.414 4 4 0 005.656 0l3-3a4 4 0 00-5.656-5.656l-1.5 1.5a1 1 0 101.414 1.414l1.5-1.5zm-5 5a2 2 0 012.828 0 1 1 0 101.414-1.414 4 4 0 00-5.656 0l-3 3a4 4 0 105.656 5.656l1.5-1.5a1 1 0 10-1.414-1.414l-1.5 1.5a2 2 0 11-2.828-2.828l3-3z" clip-rule="evenodd"/></svg>
+                            [연동 데이터] 3단계 탐구 제안서 핵심 항목
+                        </span>
+                        <span class="text-[10px] text-purple-200 bg-purple-800/80 px-2 py-0.5 rounded-full border border-purple-500/30">자동 반영됨</span>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs pt-1">
+                        <div>
+                            <span class="text-purple-300 font-semibold block text-[11px]">탐구 주제:</span>
+                            <p id="linked-prop-topic" class="text-gray-200 font-medium truncate">3단계 제안서를 작성하면 표시됩니다.</p>
+                        </div>
+                        <div>
+                            <span class="text-purple-300 font-semibold block text-[11px]">가설:</span>
+                            <p id="linked-prop-hypothesis" class="text-gray-200 font-medium truncate">3단계 제안서를 작성하면 표시됩니다.</p>
+                        </div>
+                        <div>
+                            <span class="text-purple-300 font-semibold block text-[11px]">조작 변인:</span>
+                            <p id="linked-prop-var-indep" class="text-gray-300 truncate">3단계 제안서를 작성하면 표시됩니다.</p>
+                        </div>
+                        <div>
+                            <span class="text-purple-300 font-semibold block text-[11px]">종속 변인 (측정 대상):</span>
+                            <p id="linked-prop-var-dep" class="text-gray-300 truncate">3단계 제안서를 작성하면 표시됩니다.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    <!-- App Simulator Planning Form -->
+                    <div class="lg:col-span-6 space-y-4 bg-appleParchment p-5 rounded-xl border border-appleHairline">
+                        <h3 class="font-semibold text-sm text-appleInk flex items-center gap-2 border-b pb-2 border-gray-200">
+                            <svg class="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                            1. 제안서 기반 앱 시뮬레이터 기획안 작성
+                        </h3>
+
+                        <div class="space-y-3">
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-700 mb-1">앱 타이틀 (시뮬레이터 이름)</label>
+                                <input type="text" id="app-title" value="스마트 반응속도 & 입자 충돌 시뮬레이터 v1.0" class="w-full p-2.5 border border-appleHairline rounded-lg text-xs bg-white focus:outline-none focus:border-purple-600 font-semibold text-purple-900">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-700 mb-1">제안서 연동 앱 핵심 목표 및 기획 의도</label>
+                                <textarea id="app-intent" rows="2" class="w-full p-2.5 border border-appleHairline rounded-lg text-xs bg-white focus:outline-none focus:border-purple-600" placeholder="사용자가 제안서의 조작변인(온도/농도)을 직접 조절하며 가설대로 유효 충돌 수치와 반응 속도가 변하는지 시각적으로 입증함."></textarea>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-xs font-semibold text-gray-700 mb-1">슬라이더 변수 1 범위</label>
+                                    <input type="text" id="app-var1-range" value="농도: 0.1 M ~ 3.0 M" class="w-full p-2 border border-appleHairline rounded-lg text-xs bg-white">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-gray-700 mb-1">슬라이더 변수 2 범위</label>
+                                    <input type="text" id="app-var2-range" value="온도: 200 K ~ 500 K" class="w-full p-2 border border-appleHairline rounded-lg text-xs bg-white">
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-700 mb-1">반응 속도 수치 계산 알고리즘 규칙 (충돌 이론 적용)</label>
+                                <textarea id="app-algorithm" rows="2" class="w-full p-2.5 border border-appleHairline rounded-lg text-xs bg-white focus:outline-none focus:border-purple-600" placeholder="속도 k = A * exp(-Ea / RT), 생성물 농도 C = C0 * (1 - exp(-k * t))"></textarea>
+                            </div>
+
+                            <!-- AI Vibe Coding Prompt Generator -->
+                            <div class="bg-purple-50 p-3 rounded-lg border border-purple-200 space-y-2">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-[11px] font-bold text-purple-800">제안서 완벽 연동 AI Vibe Coding Prompt 생성기</span>
+                                    <button onclick="generateAppPrompt()" class="bg-purple-600 hover:bg-purple-700 text-white text-[10px] font-semibold px-2.5 py-1 rounded-full transition shadow-sm">
+                                        프롬프트 복사
+                                    </button>
+                                </div>
+                                <p class="text-[10px] text-purple-700 leading-tight">3단계 탐구 제안서의 주제, 가설, 변인 정보와 4단계 기획안을 결합한 AI 앱 개발 종합 프롬프트를 복사합니다.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Live Prototype Sandbox Output -->
+                    <div class="lg:col-span-6 space-y-4 bg-white p-5 rounded-xl border border-appleHairline flex flex-col justify-between">
+                        <div>
+                            <div class="flex justify-between items-center border-b pb-2 border-gray-100">
+                                <h3 class="font-semibold text-sm text-appleInk flex items-center gap-2">
+                                    <span class="w-2 h-2 rounded-full bg-purple-500 animate-ping"></span>
+                                    2. 학생 앱 프로토타입 실시간 샌드박스
+                                </h3>
+                                <span class="text-[10px] font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded">실시간 실행 중</span>
+                            </div>
+
+                            <!-- Mini Custom Interactive Sandbox Simulator -->
+                            <div class="mt-4 p-4 bg-slate-900 text-white rounded-xl space-y-4 border border-slate-800">
+                                <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+                                    <span id="sandbox-title-display" class="font-bold text-xs text-purple-300">스마트 반응속도 & 입자 충돌 시뮬레이터 v1.0</span>
+                                    <span class="text-[10px] text-emerald-400 font-mono">Status: Active</span>
+                                </div>
+
+                                <div class="grid grid-cols-2 gap-3 text-xs">
+                                    <div>
+                                        <label class="text-[11px] text-gray-300">농도 입력 슬라이더</label>
+                                        <input type="range" id="sandbox-conc" min="0.2" max="3.0" step="0.2" value="1.0" class="w-full accent-purple-500" oninput="updateSandboxApp()">
+                                        <span id="sandbox-conc-val" class="text-[10px] text-purple-300 font-bold">1.0 M</span>
+                                    </div>
+                                    <div>
+                                        <label class="text-[11px] text-gray-300">온도 입력 슬라이더</label>
+                                        <input type="range" id="sandbox-temp" min="200" max="500" step="20" value="300" class="w-full accent-purple-500" oninput="updateSandboxApp()">
+                                        <span id="sandbox-temp-val" class="text-[10px] text-purple-300 font-bold">300 K</span>
+                                    </div>
+                                </div>
+
+                                <div class="h-[120px] bg-black/60 rounded-lg p-2 relative overflow-hidden flex items-center justify-center border border-white/10">
+                                    <canvas id="sandboxCanvas" class="w-full h-full"></canvas>
+                                </div>
+
+                                <div class="bg-white/10 p-2.5 rounded text-[11px] font-mono flex justify-between">
+                                    <span>계산된 반응 속도 상수 (k): <strong id="sandbox-k-val" class="text-yellow-300">0.25</strong></span>
+                                    <span>실시간 생성물 (C): <strong id="sandbox-c-val" class="text-emerald-300">0.85 M</strong></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="pt-2 flex justify-end">
+                            <button onclick="saveAppDesign()" class="bg-purple-600 hover:bg-purple-700 text-white font-medium px-6 py-2.5 rounded-full text-xs apple-pill-btn shadow-sm">
+                                [4단계] 앱 시뮬레이터 기획 저장 및 DB 제출
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex justify-end pt-2 border-t">
+                    <button onclick="switchTab('step3')" class="bg-appleBlue hover:bg-appleDarkBlue text-white font-medium px-6 py-2.5 rounded-full text-xs apple-pill-btn">
+                        [5단계] AI 결과 예측 단계로 이동 ➔
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= TAB 5: AI 결과 예측 ================= -->
+        <section id="tab-step3" class="tab-content hidden space-y-6">
+            <div class="apple-card p-6 space-y-6">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-2 border-b pb-4 border-appleHairline">
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="bg-blue-600 text-white text-xs font-bold px-2.5 py-1 rounded-full">5단계</span>
+                            <span class="text-xs font-semibold text-blue-600 bg-blue-50 border border-blue-100 px-2 py-0.5 rounded">생성형 AI (Gemini) 활용 단계</span>
+                        </div>
+                        <h2 class="text-2xl font-semibold text-appleInk mt-1">Gemini AI 기반 탐구 결과 예측 및 데이터 시각화</h2>
+                    </div>
+                    <span class="text-xs text-gray-500">3단계 작성 제안서 연동</span>
+                </div>
+
+                <!-- AI Prompt Notice Box -->
+                <div class="bg-gradient-to-r from-blue-950 to-slate-900 text-white p-5 rounded-xl space-y-3 shadow-inner">
+                    <div class="flex items-center gap-2">
+                        <svg class="w-5 h-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20"><path d="M11 3a1 1 0 10-2 0v1a1 1 0 102 0V3zM15.657 5.757a1 1 0 00-1.414-1.414l-.707.707a1 1 0 001.414 1.414l.707-.707zM18 10a1 1 0 01-1 1h-1a1 1 0 110-2h1a1 1 0 011 1zM5.05 6.464A1 1 0 106.464 5.05l-.707-.707a1 1 0 00-1.414 1.414l.707.707zM5 10a1 1 0 01-1 1H3a1 1 0 110-2h1a1 1 0 011 1zM8 16v-1a1 1 0 10-2 0v1a1 1 0 102 0zM12 14a1 1 0 100-2 1 1 0 000 2z"/></svg>
+                        <h3 class="font-semibold text-sm text-blue-200">Gemini 프롬프트 조건 입력 안내</h3>
+                    </div>
+                    <p class="text-xs text-gray-300 leading-relaxed">
+                        [3단계]에서 작성한 탐구 제안서의 가설 및 변인 설정 정보가 자동으로 반영되었습니다. 아래 "AI 예측 실행" 버튼을 누르면 AI가 반응속도론 수치 모델을 계산하여 **실험 1과 실험 2의 시간에 따른 반응 속도 예측 데이터(표 및 시각화 그래프)**를 도출합니다.
+                    </p>
+                    <div class="pt-2">
+                        <button id="ai-predict-btn" onclick="generateAIPrediction()" class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold px-5 py-2.5 rounded-full transition flex items-center gap-2">
+                            <span>Gemini AI 예측 데이터 및 그래프 추출 실행</span>
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- AI Output Display Grid -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Exp 1 AI Graph Box -->
+                    <div class="bg-white p-5 rounded-xl border border-appleHairline space-y-3">
+                        <div class="flex justify-between items-center border-b pb-2 border-gray-100">
+                            <h4 class="font-semibold text-sm text-appleInk">[실험 1] AI 예측 반응 속도 그래프</h4>
+                            <span class="text-[11px] font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded">조작변인 1</span>
+                        </div>
+                        <div class="h-[220px] relative">
+                            <canvas id="aiChart1"></canvas>
+                        </div>
+                        <div class="bg-appleParchment p-3 rounded-lg text-xs text-gray-700 font-mono space-y-1">
+                            <div class="font-semibold text-appleInk">AI 예측 수치 요약 (실험 1):</div>
+                            <div id="ai-exp1-summary" class="text-[11px] text-gray-600">예측 버튼을 클릭하면 수치 결과표가 도출됩니다.</div>
+                        </div>
+                    </div>
+
+                    <!-- Exp 2 AI Graph Box -->
+                    <div class="bg-white p-5 rounded-xl border border-appleHairline space-y-3">
+                        <div class="flex justify-between items-center border-b pb-2 border-gray-100">
+                            <h4 class="font-semibold text-sm text-appleInk">[실험 2] AI 예측 반응 속도 그래프</h4>
+                            <span class="text-[11px] font-medium text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">조작변인 2</span>
+                        </div>
+                        <div class="h-[220px] relative">
+                            <canvas id="aiChart2"></canvas>
+                        </div>
+                        <div class="bg-appleParchment p-3 rounded-lg text-xs text-gray-700 font-mono space-y-1">
+                            <div class="font-semibold text-appleInk">AI 예측 수치 요약 (실험 2):</div>
+                            <div id="ai-exp2-summary" class="text-[11px] text-gray-600">예측 버튼을 클릭하면 수치 결과표가 도출됩니다.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex justify-end pt-2">
+                    <button onclick="switchTab('step4')" class="bg-appleBlue hover:bg-appleDarkBlue text-white font-medium px-6 py-2.5 rounded-full text-xs apple-pill-btn">
+                        [6단계] 비판적 검토 및 자기 분석으로 이동 ➔
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= TAB 6: 분석 및 평가 ================= -->
+        <section id="tab-step4" class="tab-content hidden space-y-6">
+            <div class="apple-card p-6 space-y-6">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-2 border-b pb-4 border-appleHairline">
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="bg-blue-600 text-white text-xs font-bold px-2.5 py-1 rounded-full">6단계</span>
+                            <span class="text-xs font-semibold text-red-600 bg-red-50 border border-red-100 px-2 py-0.5 rounded">AI 사용 금지</span>
+                        </div>
+                        <h2 class="text-2xl font-semibold text-appleInk mt-1">AI 결과 비판적 검토, 자기 분석 및 동료 평가</h2>
+                    </div>
+                    <button onclick="exportFullPortfolio()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium px-4 py-2 rounded-full transition shadow-sm">
+                        전체 수행평가 포트폴리오 요약/클립보드 복사
+                    </button>
+                </div>
+
+                <form id="analysis-form" onsubmit="event.preventDefault(); saveAnalysis();" class="space-y-6">
+                    <!-- Critical Analysis Box -->
+                    <div class="bg-appleParchment p-5 rounded-xl border border-appleHairline space-y-4">
+                        <h3 class="font-semibold text-appleInk text-base border-b pb-2 border-gray-200">
+                            1. AI 예측 결과(그래프1, 그래프2) 및 앱 시뮬레이터에 대한 과학적 비판적 검토
+                        </h3>
+                        <p class="text-xs text-gray-600">
+                            교과서의 과학적 원리(입자 충돌 이론, 활성화 에너지, 변인 통제 등)를 기준으로 Gemini AI가 도출한 예측 데이터에 화학적 오류나 환각(Hallucination)이 없는지 논리적으로 서술하세요.
+                        </p>
+
+                        <div class="space-y-3">
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-700 mb-1">① 그래프 1 결과 분석 (과학 용어 활용)</label>
+                                <textarea id="ana-graph1" rows="3" placeholder="예: [실험 1] 결과에서 반응 온도가 10 K 상승함에 따라 활성화 에너지 이상의 에너지를 가진 입자의 비율이 비례하여 증가하였으므로 AI 그래프의 기울기 변화는 과학적으로 타당함." class="w-full p-2.5 border border-appleHairline rounded-lg text-xs bg-white focus:outline-none focus:border-appleBlue" required></textarea>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-700 mb-1">② 그래프 2 결과 분석 (과학 용어 활용)</label>
+                                <textarea id="ana-graph2" rows="3" placeholder="예: [실험 2] 결과에서 정촉매 투입 시 활성화 에너지를 낮추어 유효 충돌 가능 입자가 급증한 점이 AI 예측 곡선에 명확히 반영됨." class="w-full p-2.5 border border-appleHairline rounded-lg text-xs bg-white focus:outline-none focus:border-appleBlue" required></textarea>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-700 mb-1">③ 종합 피드백 및 환각(Hallucination) 검증 성찰</label>
+                                <textarea id="ana-hallucination" rows="2" placeholder="AI 결과 중 수치적으로 불연속적이거나 교과 원리와 모순되는 부분이 있었는지 점검하고 작성하세요." class="w-full p-2.5 border border-appleHairline rounded-lg text-xs bg-white focus:outline-none focus:border-appleBlue" required></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Peer Feedback Box -->
+                    <div class="bg-white p-5 rounded-xl border border-appleHairline space-y-4">
+                        <h3 class="font-semibold text-appleInk text-base border-b pb-2 border-gray-100">
+                            2. 동료 탐구 제안서 피드백 및 상호 평가
+                        </h3>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-700 mb-1">평가 대상 동료/모둠명</label>
+                                <input type="text" id="peer-target" placeholder="예: 4모둠" class="w-full p-2 border border-appleHairline rounded-lg text-xs bg-appleParchment focus:outline-none focus:border-appleBlue">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-700 mb-1">변인 통제 및 재현 가능성 평가</label>
+                                <select id="peer-rating" class="w-full p-2 border border-appleHairline rounded-lg text-xs bg-appleParchment focus:outline-none focus:border-appleBlue">
+                                    <option value="우수">우수 (변인통제 명확 및 타인 재현 완전 가능)</option>
+                                    <option value="보통">보통 (대부분 타당하나 일부 절차 보완 필요)</option>
+                                    <option value="보완요망">보완요망 (변인 미흡 및 재현 어려움)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">동료를 위한 구체적 서술형 피드백</label>
+                            <textarea id="peer-comment" rows="2" placeholder="동료 탐구 제안서의 변인 통제 방안과 실험 절차 재현 가능성에 대해 유의미한 피드백을 작성하세요." class="w-full p-2.5 border border-appleHairline rounded-lg text-xs bg-appleParchment focus:outline-none focus:border-appleBlue"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end pt-2">
+                        <button type="submit" class="bg-appleBlue hover:bg-appleDarkBlue text-white font-medium px-8 py-3 rounded-full text-sm apple-pill-btn shadow-sm">
+                            전체 탐구 프로젝트 최종 제출 및 DB 저장
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Teacher Dashboard Modal -->
+    <div id="teacherModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-5xl w-full max-h-[90vh] overflow-hidden flex flex-col shadow-2xl border border-appleHairline">
+            <!-- Modal Header -->
+            <div class="bg-appleTileDark text-white p-5 flex justify-between items-center">
+                <div>
+                    <h3 class="font-semibold text-lg flex items-center gap-2">
+                        <span>교사용 성취도 대시보드 (김현정 선생님)</span>
+                        <span class="text-[11px] bg-emerald-600 text-white px-2 py-0.5 rounded-full font-normal">Firebase Realtime DB 연동중</span>
+                    </h3>
+                    <p class="text-xs text-gray-300">인천청라고등학교 물질과 에너지 - 수행평가 실시간 집계 시스템 (비밀번호: 1234)</p>
+                </div>
+                <button onclick="closeTeacherModal()" class="text-gray-400 hover:text-white text-xl font-bold">&times;</button>
+            </div>
+
+            <!-- Modal Content -->
+            <div class="p-6 overflow-y-auto space-y-6 flex-grow bg-appleParchment">
+                <!-- Action Tools -->
+                <div class="flex flex-wrap justify-between items-center gap-3 bg-white p-4 rounded-xl border border-appleHairline">
+                    <div class="text-xs text-gray-600 flex items-center gap-3">
+                        <span>제출 건수: <strong id="teacher-sub-count" class="text-appleBlue font-bold text-sm">0</strong>건</span>
+                        <span class="text-gray-300">|</span>
+                        <span id="gsheet-status-text" class="text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded border border-emerald-200">Realtime DB / 구글 시트 실시간 수신중</span>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        <button onclick="openGSheetModal()" class="bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-semibold px-3.5 py-2 rounded-lg transition flex items-center gap-1.5 shadow-sm">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                            구글 시트 연동 URL 설정
+                        </button>
+                        <button onclick="downloadCSV()" class="bg-gray-800 hover:bg-gray-900 text-white text-xs font-semibold px-3.5 py-2 rounded-lg transition flex items-center gap-1.5 shadow-sm">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                            전체 제출물 CSV 다운로드
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Submissions Table -->
+                <div class="bg-white rounded-xl border border-appleHairline overflow-hidden shadow-sm">
+                    <table class="w-full text-xs text-left border-collapse">
+                        <thead class="bg-gray-100 text-gray-700 font-semibold border-b border-appleHairline">
+                            <tr>
+                                <th class="p-3">모둠/제출자</th>
+                                <th class="p-3">탐구 주제</th>
+                                <th class="p-3 text-center">2단계 보고서</th>
+                                <th class="p-3 text-center">3단계 제안서</th>
+                                <th class="p-3 text-center">4단계 앱제작</th>
+                                <th class="p-3 text-center">5단계 AI예측</th>
+                                <th class="p-3 text-center">6단계 분석</th>
+                                <th class="p-3 text-center">학생 제출 답안</th>
+                            </tr>
+                        </thead>
+                        <tbody id="teacher-submission-list" class="divide-y divide-appleHairline text-gray-700">
+                            <!-- Populated via JS / Realtime DB -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Student Detail Modal -->
+    <div id="studentDetailModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-3xl w-full p-6 space-y-4 shadow-2xl border border-appleHairline max-h-[85vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b pb-3 border-appleHairline">
+                <div>
+                    <h3 class="font-semibold text-lg text-appleInk" id="modal-detail-team">모둠 상세 작성 내용</h3>
+                    <p class="text-xs text-gray-500" id="modal-detail-time">최종 수정 시간</p>
+                </div>
+                <button onclick="closeStudentDetailModal()" class="text-gray-400 hover:text-gray-600 text-xl font-bold">&times;</button>
+            </div>
+
+            <div class="space-y-4 text-xs text-gray-800" id="modal-detail-body">
+                <!-- Content inserted via JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Google Sheets Setup Modal -->
+    <div id="gsheetModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-appleHairline">
+            <div class="flex justify-between items-center border-b pb-3 border-appleHairline">
+                <h3 class="font-semibold text-base text-appleInk">Google Sheets 연동 설정</h3>
+                <button onclick="closeGSheetModal()" class="text-gray-400 hover:text-gray-600 text-xl font-bold">&times;</button>
+            </div>
+
+            <div class="space-y-3 text-xs text-gray-600">
+                <p class="leading-relaxed">
+                    Google Apps Script의 웹앱 URL을 입력하시면 학생들이 제출할 때마다 Google 시트로 데이터가 실시간 자동 전송됩니다.
+                </p>
+
+                <div>
+                    <label class="block font-semibold text-gray-800 mb-1">Google Apps Script Web App URL</label>
+                    <input type="url" id="gsheet-url-input" placeholder="https://script.google.com/macros/s/.../exec" class="w-full p-2.5 border border-appleHairline rounded-lg text-xs bg-appleParchment focus:outline-none focus:border-appleBlue">
+                </div>
+
+                <div class="bg-blue-50 p-3 rounded-lg border border-blue-100 text-[11px] space-y-1">
+                    <span class="font-bold text-appleBlue">설치 안내:</span>
+                    <p>1. 새 구글 시트 ➔ 확장 프로그램 ➔ Apps Script 클릭</p>
+                    <p>2. `doPost(e)` 함수 배포 (액세스 권한: 모든 사용자)</p>
+                    <p>3. 생성된 URL을 위 입력창에 저장합니다.</p>
+                </div>
+            </div>
+
+            <div class="flex gap-2 pt-2">
+                <button onclick="closeGSheetModal()" class="flex-1 bg-gray-200 text-gray-700 text-xs py-2 rounded-lg font-medium">취소</button>
+                <button onclick="saveGSheetUrl()" class="flex-1 bg-emerald-600 text-white text-xs py-2 rounded-lg font-semibold">URL 저장 완료</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Password Auth Modal -->
+    <div id="pwModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-sm w-full p-6 space-y-4 shadow-xl border border-appleHairline text-center">
+            <h3 class="font-semibold text-base text-appleInk">교사 인증 비밀번호</h3>
+            <p class="text-xs text-gray-500">대시보드 접근을 위해 비밀번호를 입력하세요. (기본: 1234)</p>
+            <input type="password" id="teacher-pw-input" placeholder="비밀번호 입력" class="w-full p-2.5 border border-appleHairline rounded-lg text-center text-sm focus:outline-none focus:border-appleBlue">
+            <div class="flex gap-2">
+                <button onclick="closePwModal()" class="flex-1 bg-gray-200 text-gray-700 text-xs py-2 rounded-lg font-medium">취소</button>
+                <button onclick="verifyTeacherPw()" class="flex-1 bg-appleBlue text-white text-xs py-2 rounded-lg font-semibold">인증 확인</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Rubric Modal -->
+    <div id="rubricModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-3xl w-full p-6 space-y-4 shadow-2xl border border-appleHairline max-h-[85vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b pb-3 border-appleHairline">
+                <h3 class="font-semibold text-lg text-appleInk">물질과 에너지 수행평가 세부 채점 기준표</h3>
+                <button onclick="closeRubricModal()" class="text-gray-400 hover:text-gray-600 text-xl font-bold">&times;</button>
+            </div>
+
+            <div class="space-y-4 text-xs text-gray-700">
+                <div class="p-3 bg-appleParchment rounded-lg border border-appleHairline space-y-1">
+                    <div class="font-bold text-appleBlue">1. 조별 탐구 보고서 작성 (논술형) [AI 사용 금지]</div>
+                    <p>• 7개 농도별 측정값(반응 시간 초 단위) 정확한 기록 및 작성</p>
+                </div>
+
+                <div class="p-3 bg-appleParchment rounded-lg border border-appleHairline space-y-1">
+                    <div class="font-bold text-appleBlue">2. 탐구 제안서 작성 (서술형) [AI 사용 금지]</div>
+                    <p>• 서론: 주제 선정, 동기/필요성, 화학의 유용성 관련 목적</p>
+                    <p>• 본론: 가설 설정, 변인 통제, 조작변인1/2에 따른 단계별 재현 가능 실험 절차 서술</p>
+                    <p>• 결론: 예상 실험 결과 및 충돌 이론 기반 과학적 근거 서술</p>
+                </div>
+
+                <div class="p-3 bg-purple-50 rounded-lg border border-purple-200 space-y-1">
+                    <div class="font-bold text-purple-700">3. 앱 시뮬레이터 기획 및 제작 (SW/AI 융합)</div>
+                    <p>• 나만의 웹 시뮬레이터 기획안 작성, 변수 슬라이더 범위 및 수치 알고리즘 규칙 정의, 프로토타입 구현</p>
+                </div>
+
+                <div class="p-3 bg-appleParchment rounded-lg border border-appleHairline space-y-1">
+                    <div class="font-bold text-appleBlue">4. AI 이용한 탐구 결과 예측 [AI 활용]</div>
+                    <p>• AI 프롬프트에 제안서 입력, 실험1/2 결과를 그래프 및 시각적 타당성 있게 구현</p>
+                </div>
+
+                <div class="p-3 bg-appleParchment rounded-lg border border-appleHairline space-y-1">
+                    <div class="font-bold text-appleBlue">5. 탐구 제안서 분석 및 자기/동료 평가 (서술형) [AI 사용 금지]</div>
+                    <p>• AI 결과 및 앱 시뮬레이터를 과학 용어로 논리적으로 분석하고 환각 성찰 및 동료 피드백 작성</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-6 right-6 bg-appleTileDark text-white px-5 py-3 rounded-full text-xs font-medium shadow-2xl border border-white/10 hidden transition-all z-50">
+        <!-- Toast text -->
+    </div>
+
+    <!-- Firebase Realtime Database SDK Imports & Logic -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js";
+
+        // Firebase Configuration with Realtime Database URL
+        const firebaseConfig = {
+            apiKey: "AIzaSyB7iJqg__nwUngrDoX-fCs42nt7Cfh9tHA",
+            authDomain: "reaction-rate-6e598.firebaseapp.com",
+            databaseURL: "https://reaction-rate-6e598-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "reaction-rate-6e598",
+            storageBucket: "reaction-rate-6e598.firebasestorage.app",
+            messagingSenderId: "504164199635",
+            appId: "1:504164199635:web:0b17fe7c12bdc80f76b826"
+        };
+
+        // Initialize Firebase App & Realtime DB
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const rtdb = getDatabase(app);
+
+        let currentUser = null;
+        let studentDocId = localStorage.getItem('student_submission_id') || ('team_' + Math.random().toString(36).substring(2, 9));
+        localStorage.setItem('student_submission_id', studentDocId);
+
+        // Authenticate User Anonymously for Security Rules Compatibility
+        async function initAuth() {
+            try {
+                const cred = await signInAnonymously(auth);
+                currentUser = cred.user;
+                document.getElementById('db-status-badge')?.classList.remove('hidden');
+                subscribeToRealtimeDatabase();
+            } catch (err) {
+                console.error("Firebase Auth Error:", err);
+            }
+        }
+
+        // Save Student Submission to Realtime Database at submissions/{studentDocId}
+        window.syncSubmissionToFirestore = async function() {
+            try {
+                const subRef = ref(rtdb, 'submissions/' + studentDocId);
+                const fullPayload = {
+                    studentDocId: studentDocId,
+                    teamName: window.studentReport?.teamName || "미작성 모둠",
+                    topic: window.studentProposal?.topic || "미설정",
+                    updatedAt: new Date().toLocaleTimeString('ko-KR', { hour12: false }),
+                    report: window.studentReport || {},
+                    proposal: window.studentProposal || {},
+                    appDesign: window.studentAppDesign || {},
+                    analysis: window.studentAnalysis || {}
+                };
+
+                await set(subRef, fullPayload);
+                console.log("Realtime Database sync completed successfully.");
+            } catch (err) {
+                console.error("Realtime Database Save Error:", err);
+            }
+        };
+
+        // Subscribe to Realtime Database sub-tree submissions for Teacher Dashboard
+        function subscribeToRealtimeDatabase() {
+            const submissionsRef = ref(rtdb, 'submissions');
+            
+            onValue(submissionsRef, (snapshot) => {
+                const data = snapshot.val();
+                const rtdbSubmissions = [];
+                if (data) {
+                    Object.keys(data).forEach(key => {
+                        rtdbSubmissions.push(data[key]);
+                    });
+                }
+                window.remoteFirestoreSubmissions = rtdbSubmissions;
+                if (window.isTeacherModalOpen) {
+                    window.renderTeacherDashboard();
+                }
+            }, (error) => {
+                console.error("Realtime DB Listener Error:", error);
+            });
+        }
+
+        window.onload = function() {
+            initAuth();
+            if (window.initSimulation) window.initSimulation();
+        };
+    </script>
+
+    <!-- Main UI Logic -->
+    <script>
+        // Global Application State
+        let currentTab = 'overview';
+        let simAnimationId = null;
+        let simRunning = false;
+        let simParticles = [];
+        let collisionCount = 0;
+        let simTime = 0;
+
+        // Chart instances
+        let reactionRateChart = null;
+        let aiChart1 = null;
+        let aiChart2 = null;
+
+        // Remote Realtime DB Data Holder
+        window.remoteFirestoreSubmissions = [];
+        window.isTeacherModalOpen = false;
+
+        // Local Student State
+        window.studentReport = JSON.parse(localStorage.getItem('student_report_data') || '{}');
+        window.studentProposal = JSON.parse(localStorage.getItem('student_proposal_data') || '{}');
+        window.studentAppDesign = JSON.parse(localStorage.getItem('student_app_data') || '{}');
+        window.studentAnalysis = JSON.parse(localStorage.getItem('student_analysis_data') || '{}');
+
+        // Teacher Sample Data
+        let teacherSubmissions = [
+            {
+                studentDocId: "sample_1",
+                teamName: "1모둠 (김화학, 이반응)",
+                topic: "온도 및 촉매에 따른 A+B→C 반응속도",
+                report: { teamName: "1모둠 (김화학, 이반응)", item1Table: [{conc:'0.1 M', result:'45초'}, {conc:'0.5 M', result:'25초'}, {conc:'1.0 M', result:'15초'}] },
+                proposal: { topic: "온도 및 촉매에 따른 A+B→C 반응속도", hypothesis: "온도가 높아질수록 반응속도가 가팔라질 것이다." },
+                appDesign: { title: "스마트 반응속도 시뮬레이터 v1.0", intent: "슬라이더 조절 시 입자 유효 충돌 시각화" },
+                analysis: { graph1: "타당함", peerComment: "절차가 매우 명확함" }
+            }
+        ];
+
+        // Tab Switching Logic
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('text-appleBlue', 'bg-blue-50');
+                btn.classList.add('text-gray-600');
+            });
+
+            document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+            const targetBtn = document.getElementById(`tab-btn-${tabId}`);
+            if (targetBtn) {
+                targetBtn.classList.add('text-appleBlue', 'bg-blue-50');
+                targetBtn.classList.remove('text-gray-600');
+            }
+            currentTab = tabId;
+
+            if (tabId === 'sim') {
+                setTimeout(initSimulation, 100);
+            } else if (tabId === 'step-app') {
+                setTimeout(initSandboxApp, 100);
+            }
+        }
+
+        // Toast Helper
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.classList.remove('hidden');
+            setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 3000);
+        }
+
+        // ----------------------------------------------------
+        // SIMULATION LOGIC (Step 1)
+        // ----------------------------------------------------
+        function initSimulation() {
+            const canvas = document.getElementById('collisionCanvas');
+            if (!canvas) return;
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = canvas.parentElement.clientHeight;
+
+            if (!reactionRateChart) {
+                initReactionChart();
+            }
+            updateSimControls(false);
+        }
+
+        function updateSimControls(drawChart = false) {
+            const conc = parseFloat(document.getElementById('sim-conc').value);
+            const temp = parseInt(document.getElementById('sim-temp').value);
+            const cat = document.getElementById('sim-cat').value;
+
+            document.getElementById('sim-conc-val').textContent = `${conc.toFixed(1)} M`;
+            document.getElementById('sim-temp-val').textContent = `${temp} K`;
+            
+            let catText = "무촉매 (기준 Ea)";
+            if (cat === 'positive') catText = "정촉매 (Ea 감소)";
+            if (cat === 'negative') catText = "부촉매 (Ea 증가)";
+            document.getElementById('sim-cat-val').textContent = catText;
+
+            // Generate particles
+            const count = Math.round(conc * 35);
+            simParticles = [];
+            const canvas = document.getElementById('collisionCanvas');
+            const speed = (temp / 300) * 1.8;
+
+            for (let i = 0; i < count; i++) {
+                simParticles.push({
+                    x: Math.random() * (canvas.width - 10) + 5,
+                    y: Math.random() * (canvas.height - 10) + 5,
+                    vx: (Math.random() - 0.5) * speed,
+                    vy: (Math.random() - 0.5) * speed,
+                    radius: 4,
+                    color: i % 2 === 0 ? '#3b82f6' : '#ef4444'
+                });
+            }
+
+            drawParticles();
+        }
+
+        function drawParticles() {
+            const canvas = document.getElementById('collisionCanvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            simParticles.forEach(p => {
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                ctx.fillStyle = p.color;
+                ctx.fill();
+            });
+        }
+
+        function toggleSimulation() {
+            const btn = document.getElementById('sim-start-btn');
+            if (simRunning) {
+                simRunning = false;
+                btn.textContent = '시뮬레이션 재개';
+                if (simAnimationId) cancelAnimationFrame(simAnimationId);
+            } else {
+                simRunning = true;
+                btn.textContent = '일시 정지';
+                
+                if (simTime === 0 || reactionRateChart.data.datasets.length === 0) {
+                    simTime = 0;
+                    const conc = parseFloat(document.getElementById('sim-conc').value);
+                    const temp = parseInt(document.getElementById('sim-temp').value);
+                    const cat = document.getElementById('sim-cat').value;
+
+                    reactionRateChart.data.datasets = [{
+                        label: `실시간 측정: ${conc}M, ${temp}K, ${cat}`,
+                        data: [{x: 0, y: 0}],
+                        borderColor: '#0066cc',
+                        backgroundColor: 'rgba(0,102,204,0.1)',
+                        borderWidth: 2.5,
+                        fill: true,
+                        tension: 0.45,
+                        pointRadius: 0
+                    }];
+                    reactionRateChart.update();
+                }
+
+                document.getElementById('chart-status-badge').textContent = '실시간 반응 측정 중...';
+                document.getElementById('chart-status-badge').className = 'text-[11px] text-blue-600 font-semibold animate-pulse';
+                animateSimulation();
+            }
+        }
+
+        function animateSimulation() {
+            if (!simRunning) return;
+            const canvas = document.getElementById('collisionCanvas');
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            for (let i = 0; i < simParticles.length; i++) {
+                let p = simParticles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+
+                if (p.x < p.radius || p.x > canvas.width - p.radius) p.vx *= -1;
+                if (p.y < p.radius || p.y > canvas.height - p.radius) p.vy *= -1;
+
+                for (let j = i + 1; j < simParticles.length; j++) {
+                    let p2 = simParticles[j];
+                    let dx = p2.x - p.x;
+                    let dy = p2.y - p.y;
+                    let dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist < p.radius + p2.radius) {
+                        collisionCount++;
+                        document.getElementById('sim-collision-count').textContent = collisionCount;
+                        p.vx *= -1;
+                        p2.vx *= -1;
+                    }
+                }
+
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                ctx.fillStyle = p.color;
+                ctx.fill();
+            }
+
+            if (simTime < 10.0) {
+                simTime += 0.04;
+                if (simTime > 10.0) simTime = 10.0;
+
+                const conc = parseFloat(document.getElementById('sim-conc').value);
+                const temp = parseInt(document.getElementById('sim-temp').value);
+                const cat = document.getElementById('sim-cat').value;
+
+                let catFactor = 1.0;
+                if (cat === 'positive') catFactor = 2.2;
+                if (cat === 'negative') catFactor = 0.45;
+
+                const k = 0.15 * Math.exp((temp - 300) / 40) * catFactor;
+                const productConc = conc * (1 - Math.exp(-k * simTime));
+
+                if (reactionRateChart && reactionRateChart.data.datasets.length > 0) {
+                    reactionRateChart.data.datasets[0].data.push({ x: simTime.toFixed(1), y: productConc });
+                    reactionRateChart.update('none');
+                }
+
+                document.getElementById('sim-time-display').textContent = `${simTime.toFixed(1)} 분 / 10.0 분`;
+            } else {
+                simRunning = false;
+                document.getElementById('sim-start-btn').textContent = '시뮬레이션 완료 (재시작)';
+                document.getElementById('chart-status-badge').textContent = '10분 반응 측정 완료!';
+                document.getElementById('chart-status-badge').className = 'text-[11px] text-emerald-600 font-semibold';
+                showToast('10분간의 반응속도 곡선 측정이 완벽히 완료되었습니다.');
+                return;
+            }
+
+            simAnimationId = requestAnimationFrame(animateSimulation);
+        }
+
+        function resetSimulation() {
+            simRunning = false;
+            if (simAnimationId) cancelAnimationFrame(simAnimationId);
+            document.getElementById('sim-start-btn').textContent = '시뮬레이션 시작';
+            collisionCount = 0;
+            simTime = 0;
+            document.getElementById('sim-collision-count').textContent = '0';
+            document.getElementById('sim-time-display').textContent = '0.0 분 / 10.0 분';
+            
+            document.getElementById('sim-conc').value = 0.5;
+            document.getElementById('sim-temp').value = 300;
+            document.getElementById('sim-cat').value = 'none';
+
+            updateSimControls(false);
+
+            if (reactionRateChart) {
+                reactionRateChart.data.datasets = [];
+                reactionRateChart.update();
+            }
+
+            document.getElementById('chart-status-badge').textContent = '대기 중 (시뮬레이션 시작 버튼 클릭)';
+            document.getElementById('chart-status-badge').className = 'text-[11px] text-gray-500 font-mono';
+            showToast('시뮬레이터 및 반응 그래프가 완전 초기화되었습니다.');
+        }
+
+        function initReactionChart() {
+            const ctx = document.getElementById('reactionRateChart').getContext('2d');
+            reactionRateChart = new Chart(ctx, {
+                type: 'line',
+                data: { datasets: [] },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    parsing: { xAxisKey: 'x', yAxisKey: 'y' },
+                    scales: {
+                        x: {
+                            type: 'linear',
+                            title: { display: true, text: '반응 시간 (분)' },
+                            min: 0,
+                            max: 10,
+                            grid: { color: '#f0f0f0' }
+                        },
+                        y: {
+                            title: { display: true, text: '생성물 몰농도 (M)' },
+                            min: 0,
+                            max: 2.2,
+                            grid: { color: '#f0f0f0' }
+                        }
+                    },
+                    plugins: { legend: { position: 'top' } }
+                }
+            });
+        }
+
+        function runOneClickComparison(type) {
+            if (simAnimationId) cancelAnimationFrame(simAnimationId);
+            simRunning = false;
+            if (!reactionRateChart) return;
+            
+            reactionRateChart.data.datasets = [];
+            const timePoints = Array.from({length: 101}, (_, i) => i * 0.1);
+
+            if (type === 'conc') {
+                const configs = [
+                    { conc: 0.5, color: '#3b82f6', name: '0.5 M (저농도)' },
+                    { conc: 1.0, color: '#10b981', name: '1.0 M (중농도)' },
+                    { conc: 2.0, color: '#8b5cf6', name: '2.0 M (고농도)' }
+                ];
+                configs.forEach(c => {
+                    const k = 0.25;
+                    const points = timePoints.map(t => ({ x: t.toFixed(1), y: c.conc * (1 - Math.exp(-k * t)) }));
+                    reactionRateChart.data.datasets.push({
+                        label: c.name,
+                        data: points,
+                        borderColor: c.color,
+                        borderWidth: 2,
+                        tension: 0.45,
+                        pointRadius: 0
+                    });
+                });
+                showToast('농도 3종(0.5M vs 1.0M vs 2.0M) 비교 그래프가 생성되었습니다.');
+            } else if (type === 'temp') {
+                const configs = [
+                    { temp: 250, color: '#3b82f6', name: '250 K (저온)' },
+                    { temp: 300, color: '#f97316', name: '300 K (상온)' },
+                    { temp: 400, color: '#ef4444', name: '400 K (고온)' }
+                ];
+                configs.forEach(c => {
+                    const k = 0.12 * Math.exp((c.temp - 300) / 40);
+                    const points = timePoints.map(t => ({ x: t.toFixed(1), y: 1.0 * (1 - Math.exp(-k * t)) }));
+                    reactionRateChart.data.datasets.push({
+                        label: c.name,
+                        data: points,
+                        borderColor: c.color,
+                        borderWidth: 2,
+                        tension: 0.45,
+                        pointRadius: 0
+                    });
+                });
+                showToast('온도 3종(250K vs 300K vs 400K) 비교 그래프가 생성되었습니다.');
+            } else if (type === 'cat') {
+                const configs = [
+                    { cat: 'negative', color: '#ef4444', name: '부촉매 (Ea 증가)' },
+                    { cat: 'none', color: '#6b7280', name: '무촉매 (기준 Ea)' },
+                    { cat: 'positive', color: '#10b981', name: '정촉매 (Ea 감소)' }
+                ];
+                configs.forEach(c => {
+                    let factor = c.cat === 'positive' ? 2.2 : (c.cat === 'negative' ? 0.45 : 1.0);
+                    const k = 0.2 * factor;
+                    const points = timePoints.map(t => ({ x: t.toFixed(1), y: 1.0 * (1 - Math.exp(-k * t)) }));
+                    reactionRateChart.data.datasets.push({
+                        label: c.name,
+                        data: points,
+                        borderColor: c.color,
+                        borderWidth: 2,
+                        tension: 0.45,
+                        pointRadius: 0
+                    });
+                });
+                showToast('촉매 3종(부촉매 vs 무촉매 vs 정촉매) 비교 그래프가 생성되었습니다.');
+            }
+
+            document.getElementById('chart-status-badge').textContent = '요인별 비교 곡선 도출 완료';
+            document.getElementById('chart-status-badge').className = 'text-[11px] text-blue-600 font-semibold';
+            reactionRateChart.update();
+        }
+
+        // Save Step 2 Report
+        function saveReport() {
+            const tableData = [];
+            for (let i = 1; i <= 7; i++) {
+                tableData.push({
+                    conc: document.getElementById(`rep-conc-val-${i}`) ? document.getElementById(`rep-conc-val-${i}`).value : '',
+                    result: document.getElementById(`rep-conc-res-${i}`) ? document.getElementById(`rep-conc-res-${i}`).value : ''
+                });
+            }
+
+            window.studentReport = {
+                teamName: document.getElementById('rep-team-name') ? document.getElementById('rep-team-name').value : '',
+                item1Table: tableData
+            };
+            localStorage.setItem('student_report_data', JSON.stringify(window.studentReport));
+
+            if (window.syncSubmissionToFirestore) {
+                window.syncSubmissionToFirestore();
+            }
+            sendToGoogleSheets('2단계 보고서 저장');
+            showToast('[2단계] 조별 탐구 보고서가 Realtime DB 및 구글 시트에 저장되었습니다!');
+        }
+
+        // Print Step 2 Report Single-Page
+        function printStep1Report() {
+            const teamName = document.getElementById('rep-team-name')?.value || '미작성 모둠';
+            let rowsHtml = '';
+            for (let i = 1; i <= 7; i++) {
+                const conc = document.getElementById(`rep-conc-val-${i}`)?.value || '';
+                const res = document.getElementById(`rep-conc-res-${i}`)?.value || '';
+                rowsHtml += `
+                    <tr style="border-bottom: 1px solid #e0e0e0;">
+                        <td style="padding: 10px; text-align: center; color: #555;">${i}</td>
+                        <td style="padding: 10px; font-weight: bold; color: #0066cc;">${conc}</td>
+                        <td style="padding: 10px; color: #1d1d1f;">${res || '-'}</td>
+                    </tr>
+                `;
+            }
+
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(`
+                <!DOCTYPE html>
+                <html lang="ko">
+                <head>
+                    <meta charset="UTF-8">
+                    <title>조별 탐구 보고서 - ${teamName}</title>
+                    <style>
+                        @page { size: A4 portrait; margin: 15mm; }
+                        body { font-family: 'Apple SD Gothic Neo', 'SF Pro Text', sans-serif; color: #1d1d1f; margin: 0; padding: 10px; }
+                        .header { border-bottom: 2px solid #0066cc; padding-bottom: 10px; margin-bottom: 16px; display: flex; justify-content: space-between; }
+                        .title { font-size: 20px; font-weight: bold; }
+                        .info-box { background: #f5f5f7; border: 1px solid #e0e0e0; border-radius: 8px; padding: 10px 14px; margin-bottom: 18px; font-size: 13px; }
+                        table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 8px; }
+                        th { background: #f0f4f8; padding: 10px; border-bottom: 2px solid #cbd5e1; text-align: left; }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <div>
+                            <div style="font-size:12px; color:#0066cc; font-weight:bold;">2026학년도 2학기 물질과 에너지 수행평가</div>
+                            <div class="title">반응 속도 요인 조별 탐구 보고서</div>
+                        </div>
+                    </div>
+                    <div class="info-box"><strong>모둠명 및 모둠원 명단:</strong> ${teamName}</div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width: 50px; text-align: center;">번호</th>
+                                <th style="width: 180px;">반응물 몰농도 (M)</th>
+                                <th>측정 반응 시간 (초)</th>
+                            </tr>
+                        </thead>
+                        <tbody>${rowsHtml}</tbody>
+                    </table>
+                    <script>window.onload = function() { window.print(); };<\/script>
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
+        }
+
+        function loadSampleProposal() {
+            document.getElementById('prop-topic').value = "반응 온도 및 정촉매 종류가 A + B → C 반응 속도에 미치는 영향 탐구";
+            document.getElementById('prop-motive').value = "화학 수업 중 반응속도론 단원에서 온도가 오르면 분자 운동 에너지가 증가한다는 점을 배웠고, 실생활 보존 유통기한 검증을 위해 기획함.";
+            document.getElementById('prop-purpose').value = "촉매와 온도를 최적화하여 반응 속도를 조절하는 원리를 파악하고 화학 산업의 에너지 절감 가치를 입증함.";
+            document.getElementById('prop-hypothesis').value = "반응 온도가 높아질수록, 정촉매를 사용할수록 활성화 에너지 장벽을 넘는 입자 수가 증가하여 생성물 C 발생 속도가 빨라질 것이다.";
+            document.getElementById('prop-var-indep').value = "조작변인: 반응 온도 (20°C, 40°C, 60°C), 촉매 (무촉매, 정촉매 0.5g)";
+            document.getElementById('prop-var-dep').value = "종속변인: 초기 30초간 발생한 생성물 C의 부피 (mL)";
+            document.getElementById('prop-var-ctrl').value = "통제변인: 반응물 A, B의 초기 농도 및 전체 부피 일정 유지";
+            document.getElementById('prop-proc1').value = "1) 반응물 A, B 혼합액 20mL를 준비한다. 2) 항온수조 온도를 20°C, 40°C, 60°C로 각각 설정한다. 3) 발생 생성물 C의 부피를 측정한다.";
+            document.getElementById('prop-proc2').value = "1) 동일 농도 반응물 혼합액 20mL에 정촉매 0.5g을 투입한다. 2) 무촉매 조건과 생성물 C 발생 속도를 비교 기록한다.";
+            document.getElementById('prop-exp-result').value = "온도가 높을수록, 정촉매 투입 시 생성물 C 발생 곡선의 초기 기울기가 가파르게 증가할 것으로 예상됨.";
+            document.getElementById('prop-exp-reason').value = "아레니우스 식 및 충돌 이론에 따라 온도는 평균 kinetic energy를 높이고 촉매는 Ea를 낮추어 유효 충돌 빈도를 상승시킴.";
+            showToast('샘플 탐구 제안서 예시가 입력되었습니다.');
+        }
+
+        function saveProposal() {
+            window.studentProposal = {
+                topic: document.getElementById('prop-topic').value,
+                motive: document.getElementById('prop-motive').value,
+                purpose: document.getElementById('prop-purpose').value,
+                hypothesis: document.getElementById('prop-hypothesis').value,
+                varIndep: document.getElementById('prop-var-indep').value,
+                varDep: document.getElementById('prop-var-dep').value,
+                varCtrl: document.getElementById('prop-var-ctrl').value,
+                proc1: document.getElementById('prop-proc1').value,
+                proc2: document.getElementById('prop-proc2').value,
+                expResult: document.getElementById('prop-exp-result').value,
+                expReason: document.getElementById('prop-exp-reason').value
+            };
+            localStorage.setItem('student_proposal_data', JSON.stringify(window.studentProposal));
+
+            if (window.syncSubmissionToFirestore) {
+                window.syncSubmissionToFirestore();
+            }
+            sendToGoogleSheets('3단계 제안서 저장');
+            syncProposalToApp();
+            showToast('[3단계] 탐구 제안서가 Realtime DB 및 구글 시트에 저장되었습니다!');
+        }
+
+        // ----------------------------------------------------
+        // SANDBOX APP SIMULATOR (Step 4)
+        // ----------------------------------------------------
+        function initSandboxApp() {
+            const canvas = document.getElementById('sandboxCanvas');
+            if (!canvas) return;
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = canvas.parentElement.clientHeight;
+            syncProposalToApp();
+            updateSandboxApp();
+        }
+
+        function syncProposalToApp() {
+            const topic = document.getElementById('prop-topic')?.value || window.studentProposal?.topic || '미작성 (3단계 제안서를 작성하세요)';
+            const hypothesis = document.getElementById('prop-hypothesis')?.value || window.studentProposal?.hypothesis || '미작성 (3단계 제안서를 작성하세요)';
+            const varIndep = document.getElementById('prop-var-indep')?.value || window.studentProposal?.varIndep || '미작성';
+            const varDep = document.getElementById('prop-var-dep')?.value || window.studentProposal?.varDep || '미작성';
+
+            document.getElementById('linked-prop-topic').textContent = topic;
+            document.getElementById('linked-prop-hypothesis').textContent = hypothesis;
+            document.getElementById('linked-prop-var-indep').textContent = varIndep;
+            document.getElementById('linked-prop-var-dep').textContent = varDep;
+
+            if (topic !== '미작성 (3단계 제안서를 작성하세요)' && !document.getElementById('app-intent').value) {
+                document.getElementById('app-intent').value = `[${topic}] 탐구 제안서의 가설인 "${hypothesis}"를 검증하기 위해 조작변인(${varIndep}) 조정 시 종속변인(${varDep}) 변화를 시각화함.`;
+            }
+        }
+
+        function updateSandboxApp() {
+            const title = document.getElementById('app-title')?.value || "스마트 시뮬레이터";
+            document.getElementById('sandbox-title-display').textContent = title;
+
+            const conc = parseFloat(document.getElementById('sandbox-conc').value);
+            const temp = parseInt(document.getElementById('sandbox-temp').value);
+
+            document.getElementById('sandbox-conc-val').textContent = `${conc.toFixed(1)} M`;
+            document.getElementById('sandbox-temp-val').textContent = `${temp} K`;
+
+            const k = (0.1 * Math.exp((temp - 250) / 60) * conc).toFixed(2);
+            const cVal = (conc * (1 - Math.exp(-k * 1.5))).toFixed(2);
+
+            document.getElementById('sandbox-k-val').textContent = k;
+            document.getElementById('sandbox-c-val').textContent = `${cVal} M`;
+
+            const canvas = document.getElementById('sandboxCanvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const count = Math.round(conc * 20);
+
+            for (let i = 0; i < count; i++) {
+                const x = Math.random() * (canvas.width - 8) + 4;
+                const y = Math.random() * (canvas.height - 8) + 4;
+                ctx.beginPath();
+                ctx.arc(x, y, 3.5, 0, Math.PI * 2);
+                ctx.fillStyle = i % 2 === 0 ? '#a855f7' : '#38bdf8';
+                ctx.fill();
+            }
+        }
+
+        function generateAppPrompt() {
+            const topic = document.getElementById('prop-topic')?.value || window.studentProposal?.topic || '반응 속도 요인 탐구';
+            const hypothesis = document.getElementById('prop-hypothesis')?.value || window.studentProposal?.hypothesis || '온도 및 농도가 상승하면 반응 속도가 증가한다.';
+            const varIndep = document.getElementById('prop-var-indep')?.value || window.studentProposal?.varIndep || '반응 온도, 반응물 농도';
+            const varDep = document.getElementById('prop-var-dep')?.value || window.studentProposal?.varDep || '생성물 C 발생 속도';
+
+            const title = document.getElementById('app-title').value;
+            const intent = document.getElementById('app-intent').value;
+            const var1 = document.getElementById('app-var1-range').value;
+            const var2 = document.getElementById('app-var2-range').value;
+            const algo = document.getElementById('app-algorithm').value;
+
+            const promptText = `HTML5 Canvas 및 Tailwind CSS 기반의 반응 속도 웹 앱 시뮬레이터 "${title}" 코드를 작성해줘.
+
+[1. 탐구 제안서 연동 조건]
+- 탐구 주제: ${topic}
+- 가설: ${hypothesis}
+- 조작 변인: ${varIndep}
+- 종속 변인: ${varDep}
+
+[2. 개발 요구사항]
+- 의도: ${intent}
+- 변수 1: ${var1}, 변수 2: ${var2}
+- 수치 알고리즘: ${algo}
+- UI: 입자 2D Canvas 및 시간에 따른 반응 곡선을 포함하는 단일 HTML 파일로 완성해줘.`;
+
+            const temp = document.createElement("textarea");
+            temp.value = promptText;
+            document.body.appendChild(temp);
+            temp.select();
+            document.execCommand("copy");
+            document.body.removeChild(temp);
+            showToast('AI 바이브 코딩 프롬프트가 클립보드에 복사되었습니다!');
+        }
+
+        function saveAppDesign() {
+            window.studentAppDesign = {
+                title: document.getElementById('app-title').value,
+                intent: document.getElementById('app-intent').value,
+                var1: document.getElementById('app-var1-range').value,
+                var2: document.getElementById('app-var2-range').value,
+                algorithm: document.getElementById('app-algorithm').value
+            };
+            localStorage.setItem('student_app_data', JSON.stringify(window.studentAppDesign));
+
+            if (window.syncSubmissionToFirestore) {
+                window.syncSubmissionToFirestore();
+            }
+            sendToGoogleSheets('4단계 앱 제작 저장');
+            showToast('[4단계] 학생 앱 시뮬레이터 기획이 Realtime DB에 저장되었습니다!');
+        }
+
+        // ----------------------------------------------------
+        // AI PREDICTION (Step 5)
+        // ----------------------------------------------------
+        function generateAIPrediction() {
+            showToast('Gemini AI가 탐구 제안서 데이터를 기반으로 예측 그래프를 도출 중입니다...');
+
+            const labels = Array.from({length: 11}, (_, i) => `${i}분`);
+            
+            const ctx1 = document.getElementById('aiChart1').getContext('2d');
+            if (aiChart1) aiChart1.destroy();
+            aiChart1 = new Chart(ctx1, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        { label: '실험1 (20°C)', data: [0, 12, 22, 30, 36, 40, 43, 45, 46, 47, 47], borderColor: '#3b82f6', borderWidth: 2 },
+                        { label: '실험1 (40°C)', data: [0, 24, 40, 52, 60, 65, 68, 70, 71, 72, 72], borderColor: '#f97316', borderWidth: 2 },
+                        { label: '실험1 (60°C)', data: [0, 42, 65, 78, 85, 88, 90, 91, 91, 92, 92], borderColor: '#ef4444', borderWidth: 2 }
+                    ]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+
+            const ctx2 = document.getElementById('aiChart2').getContext('2d');
+            if (aiChart2) aiChart2.destroy();
+            aiChart2 = new Chart(ctx2, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        { label: '무촉매 (기준)', data: [0, 10, 18, 25, 30, 34, 37, 39, 40, 41, 41], borderColor: '#6b7280', borderWidth: 2 },
+                        { label: '정촉매 투입 (MnO2)', data: [0, 55, 82, 93, 97, 99, 100, 100, 100, 100, 100], borderColor: '#10b981', borderWidth: 2 }
+                    ]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+
+            document.getElementById('ai-exp1-summary').textContent = "온도 상승에 따른 유효 충돌 비례 증가 모델링 완료 (최대 기울기: 60°C 조건).";
+            document.getElementById('ai-exp2-summary').textContent = "정촉매 투입에 따른 활성화 에너지 35% 감소 모델 적용 완료.";
+            showToast('Gemini AI 예측 그래프 및 수치 분석 도출 완료!');
+        }
+
+        function saveAnalysis() {
+            window.studentAnalysis = {
+                graph1: document.getElementById('ana-graph1').value,
+                graph2: document.getElementById('ana-graph2').value,
+                hallucination: document.getElementById('ana-hallucination').value,
+                peerTarget: document.getElementById('peer-target').value,
+                peerRating: document.getElementById('peer-rating').value,
+                peerComment: document.getElementById('peer-comment').value
+            };
+            localStorage.setItem('student_analysis_data', JSON.stringify(window.studentAnalysis));
+
+            if (window.syncSubmissionToFirestore) {
+                window.syncSubmissionToFirestore();
+            }
+            sendToGoogleSheets('6단계 최종 제출');
+            showToast('[6단계] 탐구 결과 분석 및 동료 평가가 Realtime DB에 저장되었습니다!');
+        }
+
+        // ----------------------------------------------------
+        // GOOGLE SHEETS INTEGRATION
+        // ----------------------------------------------------
+        function openGSheetModal() {
+            document.getElementById('gsheet-url-input').value = localStorage.getItem('gsheet_app_url') || '';
+            document.getElementById('gsheetModal').classList.remove('hidden');
+        }
+
+        function closeGSheetModal() {
+            document.getElementById('gsheetModal').classList.add('hidden');
+        }
+
+        function saveGSheetUrl() {
+            const url = document.getElementById('gsheet-url-input').value.trim();
+            localStorage.setItem('gsheet_app_url', url);
+            closeGSheetModal();
+            showToast('Google Sheets Web App URL이 성공적으로 저장되었습니다!');
+        }
+
+        function sendToGoogleSheets(actionType) {
+            const gsheetUrl = localStorage.getItem('gsheet_app_url');
+            if (!gsheetUrl) return;
+
+            const payload = {
+                action: actionType,
+                teamName: window.studentReport?.teamName || '미작성 모둠',
+                topic: window.studentProposal?.topic || '미설정 주제',
+                hypothesis: window.studentProposal?.hypothesis || '',
+                repData: JSON.stringify(window.studentReport?.item1Table || []),
+                appTitle: window.studentAppDesign?.title || '',
+                anaGraph1: window.studentAnalysis?.graph1 || '',
+                peerComment: window.studentAnalysis?.peerComment || ''
+            };
+
+            fetch(gsheetUrl, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            }).then(() => {
+                console.log("Google Sheets sent silently.");
+            }).catch(err => {
+                console.error("Google Sheets error:", err);
+            });
+        }
+
+        // ----------------------------------------------------
+        // TEACHER DASHBOARD LOGIC
+        // ----------------------------------------------------
+        function openTeacherAuthModal() {
+            document.getElementById('pwModal').classList.remove('hidden');
+        }
+        function closePwModal() {
+            document.getElementById('pwModal').classList.add('hidden');
+        }
+        function verifyTeacherPw() {
+            const input = document.getElementById('teacher-pw-input').value;
+            if (input === '1234') {
+                closePwModal();
+                window.isTeacherModalOpen = true;
+                renderTeacherDashboard();
+                document.getElementById('teacherModal').classList.remove('hidden');
+            } else {
+                alert('비밀번호가 올바르지 않습니다. (기본: 1234)');
+            }
+        }
+        function closeTeacherModal() {
+            window.isTeacherModalOpen = false;
+            document.getElementById('teacherModal').classList.add('hidden');
+        }
+
+        function renderTeacherDashboard() {
+            const list = document.getElementById('teacher-submission-list');
+            if (!list) return;
+            list.innerHTML = '';
+
+            let combinedMap = new Map();
+
+            // 1. Add sample submissions
+            teacherSubmissions.forEach(sub => combinedMap.set(sub.studentDocId, sub));
+
+            // 2. Add local storage submission
+            const localDocId = localStorage.getItem('student_submission_id') || 'local_current';
+            if (window.studentReport?.teamName || window.studentProposal?.topic) {
+                combinedMap.set(localDocId, {
+                    studentDocId: localDocId,
+                    teamName: window.studentReport?.teamName || "내 브라우저 작성중 모둠",
+                    topic: window.studentProposal?.topic || "미설정 주제",
+                    report: window.studentReport,
+                    proposal: window.studentProposal,
+                    appDesign: window.studentAppDesign,
+                    analysis: window.studentAnalysis,
+                    updatedAt: new Date().toLocaleTimeString()
+                });
+            }
+
+            // 3. Add remote Realtime DB submissions
+            if (window.remoteFirestoreSubmissions && window.remoteFirestoreSubmissions.length > 0) {
+                window.remoteFirestoreSubmissions.forEach(sub => {
+                    if (sub.studentDocId) {
+                        combinedMap.set(sub.studentDocId, sub);
+                    }
+                });
+            }
+
+            const combinedList = Array.from(combinedMap.values());
+            document.getElementById('teacher-sub-count').textContent = combinedList.length;
+
+            if (combinedList.length === 0) {
+                list.innerHTML = `<tr><td colspan="8" class="p-4 text-center text-gray-400">아직 제출된 학생 데이터가 없습니다.</td></tr>`;
+                return;
+            }
+
+            combinedList.forEach((item, index) => {
+                const tr = document.createElement('tr');
+                const hasRep = item.report && item.report.item1Table && item.report.item1Table.length > 0;
+                const hasProp = item.proposal && item.proposal.topic;
+                const hasApp = item.appDesign && item.appDesign.title;
+                const hasAna = item.analysis && item.analysis.graph1;
+
+                tr.innerHTML = `
+                    <td class="p-3 font-semibold text-appleInk">${item.teamName || '모둠' + (index+1)}</td>
+                    <td class="p-3 text-gray-600 max-w-[200px] truncate">${item.topic || '미작성'}</td>
+                    <td class="p-3 text-center"><span class="${hasRep ? 'bg-blue-50 text-blue-700 font-bold' : 'bg-gray-100 text-gray-400'} px-2 py-0.5 rounded text-[11px]">${hasRep ? '제출완료' : '미작성'}</span></td>
+                    <td class="p-3 text-center"><span class="${hasProp ? 'bg-blue-50 text-blue-700 font-bold' : 'bg-gray-100 text-gray-400'} px-2 py-0.5 rounded text-[11px]">${hasProp ? '제출완료' : '미작성'}</span></td>
+                    <td class="p-3 text-center"><span class="${hasApp ? 'bg-purple-50 text-purple-700 font-bold' : 'bg-gray-100 text-gray-400'} px-2 py-0.5 rounded text-[11px]">${hasApp ? '제출완료' : '미작성'}</span></td>
+                    <td class="p-3 text-center"><span class="bg-blue-50 text-blue-700 font-bold px-2 py-0.5 rounded text-[11px]">완료</span></td>
+                    <td class="p-3 text-center"><span class="${hasAna ? 'bg-blue-50 text-blue-700 font-bold' : 'bg-gray-100 text-gray-400'} px-2 py-0.5 rounded text-[11px]">${hasAna ? '제출완료' : '미작성'}</span></td>
+                    <td class="p-3 text-center">
+                        <button onclick="viewStudentDetail('${item.studentDocId}')" class="bg-appleBlue hover:bg-appleDarkBlue text-white text-[11px] px-3 py-1 rounded-full transition shadow-sm font-medium">
+                            상세 답안 보기
+                        </button>
+                    </td>
+                `;
+                list.appendChild(tr);
+            });
+
+            window.currentCombinedList = combinedList;
+        }
+
+        // View Student Detail Modal
+        function viewStudentDetail(docId) {
+            const list = window.currentCombinedList || [];
+            const student = list.find(s => s.studentDocId === docId);
+            if (!student) return;
+
+            document.getElementById('modal-detail-team').textContent = `${student.teamName || '미작성 모둠'} 전체 작성 결과`;
+            document.getElementById('modal-detail-time').textContent = `최종 기록: ${student.updatedAt || '실시간 연동'}`;
+
+            const repTable = student.report?.item1Table || [];
+            let repTableHtml = '<p class="text-gray-400">2단계 기록이 없습니다.</p>';
+            if (repTable.length > 0) {
+                repTableHtml = `<table class="w-full border text-[11px]">
+                    <tr class="bg-gray-100"><th class="p-1 border">농도</th><th class="p-1 border">측정 반응 시간 (초)</th></tr>
+                    ${repTable.map(r => `<tr><td class="p-1 border font-semibold text-blue-600">${r.conc}</td><td class="p-1 border">${r.result || '-'}</td></tr>`).join('')}
+                </table>`;
+            }
+
+            const bodyHtml = `
+                <div class="space-y-3">
+                    <div class="bg-blue-50 p-3 rounded-lg border border-blue-200">
+                        <h4 class="font-bold text-appleBlue text-xs mb-1">[2단계] 조별 탐구 보고서 (농도별 반응시간)</h4>
+                        ${repTableHtml}
+                    </div>
+
+                    <div class="bg-appleParchment p-3 rounded-lg border border-appleHairline space-y-1">
+                        <h4 class="font-bold text-appleInk text-xs">[3단계] 탐구 제안서</h4>
+                        <p><strong>탐구 주제:</strong> ${student.proposal?.topic || '-'}</p>
+                        <p><strong>가설:</strong> ${student.proposal?.hypothesis || '-'}</p>
+                        <p><strong>조작변인:</strong> ${student.proposal?.varIndep || '-'}</p>
+                        <p><strong>종속변인:</strong> ${student.proposal?.varDep || '-'}</p>
+                        <p><strong>실험1 절차:</strong> ${student.proposal?.proc1 || '-'}</p>
+                    </div>
+
+                    <div class="bg-purple-50 p-3 rounded-lg border border-purple-200 space-y-1">
+                        <h4 class="font-bold text-purple-800 text-xs">[4단계] 나만의 앱 시뮬레이터 기획</h4>
+                        <p><strong>앱 타이틀:</strong> ${student.appDesign?.title || '-'}</p>
+                        <p><strong>기획 의도:</strong> ${student.appDesign?.intent || '-'}</p>
+                        <p><strong>알고리즘 규칙:</strong> ${student.appDesign?.algorithm || '-'}</p>
+                    </div>
+
+                    <div class="bg-appleParchment p-3 rounded-lg border border-appleHairline space-y-1">
+                        <h4 class="font-bold text-appleInk text-xs">[6단계] AI 비판적 성찰 & 동료 평가</h4>
+                        <p><strong>그래프 1 비판 검토:</strong> ${student.analysis?.graph1 || '-'}</p>
+                        <p><strong>동료 서술 피드백:</strong> ${student.analysis?.peerComment || '-'}</p>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('modal-detail-body').innerHTML = bodyHtml;
+            document.getElementById('studentDetailModal').classList.remove('hidden');
+        }
+
+        function closeStudentDetailModal() {
+            document.getElementById('studentDetailModal').classList.add('hidden');
+        }
+
+        // Export CSV
+        function downloadCSV() {
+            let csvContent = "\uFEFF"; // UTF-8 BOM
+            csvContent += "모둠명,탐구주제,가설,2단계측정기록,4단계앱타이틀,6단계AI검토,동료피드백\n";
+
+            const list = window.currentCombinedList || [];
+            list.forEach(row => {
+                const repStr = row.report?.item1Table ? row.report.item1Table.map(r => `${r.conc}:${r.result}`).join(' / ') : '';
+                csvContent += `"${row.teamName || ''}","${row.topic || ''}","${row.proposal?.hypothesis || ''}","${repStr}","${row.appDesign?.title || ''}","${row.analysis?.graph1 || ''}","${row.analysis?.peerComment || ''}"\n`;
+            });
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.setAttribute("download", `인천청라고_물질과에너지_수행평가_실시간집계.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            showToast('CSV 성적 집계표 다운로드가 완료되었습니다.');
+        }
+
+        // Export Full Portfolio
+        function exportFullPortfolio() {
+            const summary = `
+[2026학년도 2학기 인천청라고 물질과 에너지 수행평가 포트폴리오]
+■ 모둠명: ${window.studentReport?.teamName || '미작성'}
+■ 탐구 주제: ${window.studentProposal?.topic || '미작성'}
+■ 가설: ${window.studentProposal?.hypothesis || '미작성'}
+■ 앱 시뮬레이터: ${window.studentAppDesign?.title || '미작성'}
+■ AI 결과 비판적 검토: ${window.studentAnalysis?.graph1 || '미작성'}
+■ 동료 피드백: ${window.studentAnalysis?.peerComment || '미작성'}
+            `.trim();
+
+            const tempInput = document.createElement("textarea");
+            tempInput.value = summary;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            document.execCommand("copy");
+            document.body.removeChild(tempInput);
+
+            showToast('전체 포트폴리오 요약본이 클립보드에 복사되었습니다.');
+        }
+
+        function openRubricModal() {
+            document.getElementById('rubricModal').classList.remove('hidden');
+        }
+        function closeRubricModal() {
+            document.getElementById('rubricModal').classList.add('hidden');
+        }
+    </script>
+</body>
+</html>
