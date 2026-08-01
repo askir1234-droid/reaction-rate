@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>효소적 갈변 반응 실시간 인터랙티브 시뮬레이터</title>
+    <!-- Chart.js 라이브러리 연동 -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary-color: #1e3a8a;
+            --secondary-color: #0284c7;
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-color: #334155;
+            --border-color: #e2e8f0;
+        }
+
+        body {
+            font-family: 'Pretendard', 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 24px;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 24px 32px;
+            border-radius: 16px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            margin-bottom: 24px;
+        }
+
+        header h1 {
+            margin: 0 0 8px 0;
+            font-size: 1.6rem;
+        }
+
+        header p {
+            margin: 0;
+            opacity: 0.9;
+            font-size: 0.95rem;
+        }
+
+        .layout {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 24px;
+        }
+
+        @media (min-width: 768px) {
+            .layout {
+                grid-template-columns: 320px 1fr;
+            }
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 24px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        }
+
+        h2 {
+            font-size: 1.2rem;
+            color: var(--primary-color);
+            margin-top: 0;
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 8px;
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        .control-group label {
+            display: flex;
+            justify-content: space-between;
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+        }
+
+        .slider {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: #cbd5e1;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--secondary-color);
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+
+        .slider::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .metric-card {
+            background: #f1f5f9;
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .metric-card span {
+            display: block;
+            font-size: 0.8rem;
+            color: #64748b;
+        }
+
+        .metric-card strong {
+            display: block;
+            font-size: 1.1rem;
+            color: var(--primary-color);
+            margin-top: 4px;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 380px;
+            width: 100%;
+        }
+
+        .apple-preview {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin-top: 20px;
+            padding: 12px;
+            background: #fafafa;
+            border-radius: 8px;
+            border: 1px dashed var(--border-color);
+        }
+
+        .apple-circle {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 2px solid #cbd5e1;
+            transition: background-color 0.3s;
+        }
+
+        .info-box {
+            margin-top: 20px;
+            padding: 16px;
+            background-color: #f0f9ff;
+            border-left: 4px solid var(--secondary-color);
+            border-radius: 4px;
+            font-size: 0.88rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>사과 효소적 갈변 실시간 시뮬레이터</h1>
+            <p>보관 온도 및 비타민 C 농도를 조절하여 실시간 반응 속도 곡선을 확인하세요.</p>
+        </header>
+
+        <div class="layout">
+            <!-- 시뮬레이션 제어 패널 -->
+            <div class="card">
+                <h2>실험 변인 제어</h2>
+                
+                <div class="control-group">
+                    <label for="tempSlider">
+                        <span>보관 온도 (℃)</span>
+                        <span id="tempValue">25 ℃</span>
+                    </label>
+                    <input type="range" id="tempSlider" class="slider" min="0" max="50" value="25" step="1">
+                </div>
+
+                <div class="control-group">
+                    <label for="concSlider">
+                        <span>비타민 C 농도 (%)</span>
+                        <span id="concValue">0.5 %</span>
+                    </label>
+                    <input type="range" id="concSlider" class="slider" min="0" max="3" value="0.5" step="0.1">
+                </div>
+
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <span>초기 반응 속도</span>
+                        <strong id="rateValue">0.0100</strong>
+                    </div>
+                    <div class="metric-card">
+                        <span>60분 후 갈변 지수</span>
+                        <strong id="finalIndexValue">1.46</strong>
+                    </div>
+                </div>
+
+                <div class="apple-preview">
+                    <span style="font-size: 0.85rem; font-weight: 600;">60분 후 사과 색상:</span>
+                    <div id="appleColor" class="apple-circle"></div>
+                </div>
+
+                <div class="info-box">
+                    <strong>💡 화학적 매커니즘:</strong><br>
+                    • 온도가 오를수록 활성화 에너지 이상의 분자 수가 증가하여 속도가 상승합니다.<br>
+                    • 비타민 C는 환원제로 작용하여 산화 중간체를 억제합니다.
+                </div>
+            </div>
+
+            <!-- 시각화 차트 영역 -->
+            <div class="card">
+                <h2>시간 경과에 따른 갈변 지수 (RGB R/G 비율)</h2>
+                <div class="chart-container">
+                    <canvas id="simChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const tempSlider = document.getElementById('tempSlider');
+        const concSlider = document.getElementById('concSlider');
+        const tempValue = document.getElementById('tempValue');
+        const concValue = document.getElementById('concValue');
+        const rateValue = document.getElementById('rateValue');
+        const finalIndexValue = document.getElementById('finalIndexValue');
+        const appleColor = document.getElementById('appleColor');
+
+        const ctx = document.getElementById('simChart').getContext('2d');
+        
+        let simChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['0분', '10분', '20분', '30분', '40분', '50분', '60분'],
+                datasets: [
+                    {
+                        label: '현재 설정 조건 (실시간)',
+                        data: [],
+                        borderColor: '#0284c7',
+                        backgroundColor: 'rgba(2, 132, 199, 0.1)',
+                        fill: true,
+                        tension: 0.3,
+                        borderWidth: 3,
+                        pointRadius: 5
+                    },
+                    {
+                        label: '대조군 (25℃, 0% 비타민 C)',
+                        data: [1.00, 1.22, 1.41, 1.58, 1.72, 1.83, 1.92],
+                        borderColor: '#94a3b8',
+                        borderDash: [5, 5],
+                        fill: false,
+                        tension: 0.3,
+                        pointRadius: 0
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        min: 0.95,
+                        max: 2.6,
+                        title: { display: true, text: '갈변 지수 (RGB R/G Ratio)' }
+                    },
+                    x: {
+                        title: { display: true, text: '시간 (분)' }
+                    }
+                },
+                plugins: {
+                    legend: { position: 'top' }
+                }
+            }
+        });
+
+        function calculateK(T, C) {
+            const k_temp = 0.02 * Math.exp(0.04 * (T - 25)); 
+            const inhibition = Math.exp(-1.3 * C);
+            return k_temp * inhibition;
+        }
+
+        function updateSimulation() {
+            const T = parseFloat(tempSlider.value);
+            const C = parseFloat(concSlider.value);
+
+            tempValue.textContent = `${T} ℃`;
+            concValue.textContent = `${C.toFixed(1)} %`;
+
+            const k = calculateK(T, C);
+            const times = [0, 10, 20, 30, 40, 50, 60];
+            const maxDelta = 1.6;
+            const data = times.map(t => 1.00 + maxDelta * (1 - Math.exp(-k * t)));
+
+            const initialRate = (data[1] - data[0]) / 10;
+            const finalIndex = data[data.length - 1];
+
+            rateValue.textContent = initialRate.toFixed(4);
+            finalIndexValue.textContent = finalIndex.toFixed(2);
+
+            const browningFactor = Math.min((finalIndex - 1.0) / 1.4, 1.0);
+            const r = Math.round(255 - browningFactor * 50);
+            const g = Math.round(245 - browningFactor * 130);
+            const b = Math.round(220 - browningFactor * 170);
+            appleColor.style.backgroundColor = `rgb(${r}, ${g}, ${b})`;
+
+            simChart.data.datasets[0].data = data;
+            simChart.update();
+        }
+
+        tempSlider.addEventListener('input', updateSimulation);
+        concSlider.addEventListener('input', updateSimulation);
+
+        updateSimulation();
+    </script>
+</body>
+</html>
