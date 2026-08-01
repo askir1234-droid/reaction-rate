@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI 분석 예측 리포트 (건축 자재 수화 반응)</title>
+    <title>AI 분석 예측 리포트</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -24,7 +24,7 @@
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
             <div>
                 <label class="block text-sm font-semibold text-slate-700 mb-1">분반</label>
-                <input type="text" id="class-section" placeholder="예: 1반" class="w-full px-4 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none">
+                <input type="text" id="class-section" placeholder="예: A반" class="w-full px-4 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-blue-500 outline-none">
             </div>
             <div>
                 <label class="block text-sm font-semibold text-slate-700 mb-1">학번</label>
@@ -82,7 +82,7 @@
                     </div>
                     <div>
                         <label class="block text-sm font-semibold text-slate-700 mb-1">종속 변인 1 (Y축 이름)</label>
-                        <input type="text" id="var1-y" placeholder="예: 생성물의 양(g) 또는 경화율(%)" class="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none">
+                        <input type="text" id="var1-y" placeholder="예: 생성물의 양(g) 또는 부피(mL)" class="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none">
                     </div>
                 </div>
             </div>
@@ -117,7 +117,7 @@
                     </div>
                     <div>
                         <label class="block text-sm font-semibold text-slate-700 mb-1">종속 변인 2 (Y축 이름)</label>
-                        <input type="text" id="var2-y" placeholder="예: 생성물의 양(g) 또는 경화율(%)" class="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-teal-500 outline-none">
+                        <input type="text" id="var2-y" placeholder="예: 생성물의 양(g) 또는 부피(mL)" class="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-teal-500 outline-none">
                     </div>
                 </div>
             </div>
@@ -365,7 +365,7 @@
         // 시각화 생성 버튼 클릭 이벤트
         document.getElementById('generate-btn').addEventListener('click', () => {
             // 학생 정보 및 가설 셋팅
-            document.getElementById('display-class').innerText = document.getElementById('class-section').value ? `[${document.getElementById('class-section').value}]` : '';
+            document.getElementById('display-class').innerText = document.getElementById('class-section').value ? `[${document.getElementById('class-section'].value}]` : '';
             document.getElementById('display-id').innerText = document.getElementById('student-id').value || '학번 미입력';
             document.getElementById('display-name').innerText = document.getElementById('student-name').value || '이름 미입력';
             document.getElementById('display-hypo1').innerText = document.getElementById('hypothesis1').value || '작성된 가설이 없습니다.';
