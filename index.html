@@ -69,7 +69,8 @@
                         </select>
                     </div>
                     <div class="bg-white p-4 rounded-lg border border-slate-200">
-                        <label class="block text-xs font-semibold text-slate-500 mb-2">조건 3가지 (순서 상관없이 입력 가능)</label>
+                        <label class="block text-xs font-semibold text-slate-500 mb-1" id="v1-guide">조건 3가지 (농도/온도는 순서 상관없음)</label>
+                        <p class="text-[11px] text-blue-600 mb-2 font-medium" id="v1-subguide">💡 농도와 온도는 자유롭게 입력하세요.</p>
                         <div class="space-y-2">
                             <input type="text" id="v1-c1" class="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 focus:ring-2 focus:ring-blue-400 outline-none">
                             <input type="text" id="v1-c2" class="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 focus:ring-2 focus:ring-blue-400 outline-none">
@@ -104,7 +105,8 @@
                         </select>
                     </div>
                     <div class="bg-white p-4 rounded-lg border border-slate-200">
-                        <label class="block text-xs font-semibold text-slate-500 mb-2">조건 3가지 (순서 상관없이 입력 가능)</label>
+                        <label class="block text-xs font-semibold text-slate-500 mb-1" id="v2-guide">조건 3가지 (농도/온도는 순서 상관없음)</label>
+                        <p class="text-[11px] text-teal-600 mb-2 font-medium" id="v2-subguide">💡 농도와 온도는 자유롭게 입력하세요.</p>
                         <div class="space-y-2">
                             <input type="text" id="v2-c1" class="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 focus:ring-2 focus:ring-teal-400 outline-none">
                             <input type="text" id="v2-c2" class="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 focus:ring-2 focus:ring-teal-400 outline-none">
@@ -219,25 +221,32 @@
         let chartInstance2 = null;
         const timeLabels = [0, 10, 20, 30, 40, 50, 60];
 
-        // 플레이스홀더 동적 변경 로직
+        // 선택한 조작 변인에 따라 안내 문구 및 플레이스홀더 동적 변경 로직
         function updatePlaceholders(selectId, prefix) {
             const val = document.getElementById(selectId).value;
             const c1 = document.getElementById(`${prefix}-c1`);
             const c2 = document.getElementById(`${prefix}-c2`);
             const c3 = document.getElementById(`${prefix}-c3`);
+            const subGuide = document.getElementById(`${prefix}-subguide`);
             
             if (val === '촉매') {
                 c1.placeholder = "입력 예: 정촉매";
                 c2.placeholder = "입력 예: 촉매 없음";
                 c3.placeholder = "입력 예: 부촉매";
+                subGuide.innerText = "⚠️ 촉매는 반드시 순서대로 (정촉매 -> 촉매 없음 -> 부촉매) 입력하세요.";
+                subGuide.className = "text-[11px] text-amber-600 mb-2 font-bold";
             } else if (val === '온도') {
                 c1.placeholder = "입력 예: 30℃";
                 c2.placeholder = "입력 예: 20℃";
                 c3.placeholder = "입력 예: 10℃";
+                subGuide.innerText = "💡 온도는 순서 상관없이 자유롭게 입력하세요.";
+                subGuide.className = "text-[11px] text-blue-600 mb-2 font-medium";
             } else if (val === '농도') {
                 c1.placeholder = "입력 예: 20%";
                 c2.placeholder = "입력 예: 10%";
                 c3.placeholder = "입력 예: 5%";
+                subGuide.innerText = "💡 농도는 순서 상관없이 자유롭게 입력하세요.";
+                subGuide.className = "text-[11px] text-blue-600 mb-2 font-medium";
             }
         }
 
@@ -248,30 +257,32 @@
             document.getElementById('var2-name').addEventListener('change', () => updatePlaceholders('var2-name', 'v2'));
         });
 
-        // 조건 문자열 분석 및 정렬 알고리즘
+        // 조건 문자열 분석 및 정렬 알고리즘 (촉매는 입력된 순서 유지, 온도/농도는 자동 정렬)
         function analyzeAndSortConditions(conds, varName) {
             let parsed = conds.map((str, index) => {
                 let safeStr = str.trim() || `조건${index+1}`;
                 let score = 0;
 
                 if (varName === '촉매') {
-                    score = 2; 
-                    if (safeStr.includes('정')) score = 3; 
-                    else if (safeStr.includes('부')) score = 1; 
+                    // 촉매는 사용자가 입력한 순서(c1, c2, c3)를 그대로 유지하기 위해 역순 가중치 부여
+                    score = 3 - index; 
                 } else {
                     let match = safeStr.match(/-?\d+(\.\d+)?/);
                     if (match) {
                         score = parseFloat(match[0]);
                     } else {
-                        if (safeStr.includes('높') || safeStr.includes('강') || safeStr.includes('빠') || safeStr.includes('많')) score = 3;
-                        else if (safeStr.includes('중') || safeStr.includes('보통')) score = 2;
-                        else if (safeStr.includes('낮') || safeStr.includes('약') || safeStr.includes('느') || safeStr.includes('적')) score = 1;
+                        if (safeStr.includes('높') || safeStr.includes('강') || safeStr.includes('빠') || safeStr.includes('많')) score = 3 - index;
+                        else if (safeStr.includes('중') || safeStr.includes('보통')) score = 2 - index;
+                        else if (safeStr.includes('낮') || safeStr.includes('약') || safeStr.includes('느') || safeStr.includes('적')) score = 1 - index;
+                        else score = 3 - index;
                     }
                 }
                 return { original: safeStr, score: score, originalIndex: index };
             });
 
-            parsed.sort((a, b) => b.score - a.score);
+            if (varName !== '촉매') {
+                parsed.sort((a, b) => b.score - a.score);
+            }
             return parsed.map(item => item.original);
         }
 
@@ -365,7 +376,7 @@
         // 시각화 생성 버튼 클릭 이벤트
         document.getElementById('generate-btn').addEventListener('click', () => {
             // 학생 정보 및 가설 셋팅
-            document.getElementById('display-class').innerText = document.getElementById('class-section').value ? `[${document.getElementById('class-section'].value}]` : '';
+            document.getElementById('display-class').innerText = document.getElementById('class-section').value ? `[${document.getElementById('class-section').value}]` : '';
             document.getElementById('display-id').innerText = document.getElementById('student-id').value || '학번 미입력';
             document.getElementById('display-name').innerText = document.getElementById('student-name').value || '이름 미입력';
             document.getElementById('display-hypo1').innerText = document.getElementById('hypothesis1').value || '작성된 가설이 없습니다.';
