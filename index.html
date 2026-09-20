@@ -76,13 +76,6 @@
                     <i data-lucide="clipboard-check" class="w-4 h-4 text-indigo-600"></i>
                     <span>채점 기준표</span>
                 </button>
-
-                <!-- API Key 설정 버튼 -->
-                <button type="button" onclick="openApiKeyModal()"
-                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-100 text-xs font-semibold transition-all">
-                    <i data-lucide="key" class="w-4 h-4 text-blue-600"></i>
-                    <span>API 키 설정</span>
-                </button>
             </div>
         </div>
     </header>
@@ -485,34 +478,13 @@
         </div>
     </div>
 
-    <!-- [모달 3] API 키 설정 -->
-    <div id="apiKeyModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4">
-        <div class="bg-white rounded-2xl max-w-md w-full p-5 shadow-2xl space-y-4">
-            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-                <h3 class="font-bold text-slate-900 text-sm">Gemini API 키 설정</h3>
-                <button type="button" onclick="closeApiKeyModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
-            </div>
-            <div class="space-y-3 text-xs text-slate-600">
-                <p>중간점검 분석을 위한 Gemini API 키를 입력하세요.</p>
-                <input type="password" id="geminiApiKeyInput" placeholder="AIzaSy..."
-                    class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-mono bg-slate-50 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none">
-            </div>
-            <div class="flex justify-end gap-2 pt-2">
-                <button type="button" onclick="closeApiKeyModal()" class="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 text-xs font-semibold">취소</button>
-                <button type="button" onclick="saveApiKey()" class="px-4 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-semibold">저장하기</button>
-            </div>
-        </div>
-    </div>
-
     <script>
         let exp1StepCount = 3;
         let exp2StepCount = 3;
-        let geminiApiKey = localStorage.getItem('rate_api_key') || '';
+        // 내장된 Gemini API 키 (소스코드에 직접 포함)
+        const geminiApiKey = "";
 
         window.addEventListener('DOMContentLoaded', () => {
-            if (localStorage.getItem('rate_api_key')) {
-                geminiApiKey = localStorage.getItem('rate_api_key');
-            }
             lucide.createIcons();
             renderExpSteps(1);
             renderExpSteps(2);
@@ -536,20 +508,6 @@
         function closeGuideModal() { document.getElementById('guideModal').classList.add('hidden'); document.getElementById('guideModal').classList.remove('flex'); }
         function openRubricModal() { document.getElementById('rubricModal').classList.remove('hidden'); document.getElementById('rubricModal').classList.add('flex'); }
         function closeRubricModal() { document.getElementById('rubricModal').classList.add('hidden'); document.getElementById('rubricModal').classList.remove('flex'); }
-        function openApiKeyModal() { 
-            document.getElementById('geminiApiKeyInput').value = geminiApiKey;
-            document.getElementById('apiKeyModal').classList.remove('hidden'); 
-            document.getElementById('apiKeyModal').classList.add('flex'); 
-        }
-        function closeApiKeyModal() { document.getElementById('apiKeyModal').classList.add('hidden'); document.getElementById('apiKeyModal').classList.remove('flex'); }
-
-        function saveApiKey() {
-            const key = document.getElementById('geminiApiKeyInput').value.trim();
-            geminiApiKey = key;
-            if (key) localStorage.setItem('rate_api_key', key);
-            else localStorage.removeItem('rate_api_key');
-            closeApiKeyModal();
-        }
 
         function renderExpSteps(expNum) {
             const container = document.getElementById(`exp${expNum}StepsContainer`);
@@ -688,8 +646,8 @@
             }
             if (mode === 'ai') {
                 if (!geminiApiKey) {
-                    alert('API 키를 설정해주세요.');
-                    openApiKeyModal();
+                    alert('API 키가 설정되지 않았습니다. 오프라인 자가진단 기능을 이용하세요.');
+                    executeLocalDiagnostic(data);
                     return;
                 }
                 executeAiFeedback(data);
