@@ -385,13 +385,8 @@
 
     let isFirstSubmitted = false;
 
-    // ★ 수업용 Gemini API 키를 아래 따옴표 안에 넣으세요.
-    // 수업이 끝나면 이 키는 Google AI Studio에서 삭제하세요.
-    const GEMINI_API_KEY = "여기에_수업용_API_KEY를_붙여넣으세요";
-
-    // 무료 수업용 모델: AI Studio에서 확인한 Flash-Lite 계열 모델명을 입력하세요.
-    // 현재 프로젝트에서 사용할 정확한 모델 ID로 필요시 변경하세요.
-    const GEMINI_MODEL = "gemini-3.5-flash-lite";
+    // Gemini API 키는 이 HTML에 저장하지 않습니다.
+    // AI 피드백 요청은 아래 Google Apps Script 서버를 통해 처리합니다.
 
     // 구글 시트 웹앱 주소
     const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyplWtnh2kdh5skNqqAVxRwKN_Plbm7JFkS6w28LLVY7ptp8BhWVlxC60xoYfz-o2Yfjw/exec";
@@ -1030,31 +1025,19 @@ ${pack(2, e2)}`;
     }
 
     async function fetchFeedback(promptText, experimentNo) {
-        if (!GEMINI_API_KEY || GEMINI_API_KEY.includes("여기에_")) {
-            throw new Error("HTML 상단의 GEMINI_API_KEY에 수업용 API 키를 입력해주세요.");
-        }
-
-        const endpoint =
-            `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(GEMINI_MODEL)}:generateContent?key=${encodeURIComponent(GEMINI_API_KEY)}`;
-
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 45000);
+        const timeoutId = setTimeout(() => controller.abort(), 60000);
 
         try {
-            const response = await fetch(endpoint, {
+            const response = await fetch(GOOGLE_SCRIPT_URL, {
                 method: "POST",
                 headers: {
-                    "Content-Type": "application/json"
+                    "Content-Type": "text/plain;charset=utf-8"
                 },
                 body: JSON.stringify({
-                    contents: [{
-                        role: "user",
-                        parts: [{ text: promptText }]
-                    }],
-                    generationConfig: {
-                        temperature: 0.2,
-                        maxOutputTokens: 350
-                    }
+                    action: "geminiFeedback",
+                    prompt: promptText,
+                    experimentNo: experimentNo
                 }),
                 signal: controller.signal
             });
@@ -1062,28 +1045,21 @@ ${pack(2, e2)}`;
             let data = {};
             try {
                 data = await response.json();
-            } catch (_) {}
+            } catch (_) {
+                throw new Error("AI 피드백 서버의 응답을 읽지 못했습니다.");
+            }
 
-            if (!response.ok) {
-                const message =
-                    data?.error?.message ||
-                    `Gemini API 오류 (${response.status})`;
-
+            if (!response.ok || data.ok === false) {
+                const message = data.message || `AI 피드백 서버 오류 (${response.status})`;
                 const err = new Error(message);
-                err.status = response.status;
+                err.status = data.status || response.status;
                 throw err;
             }
 
-            const text =
-                data?.candidates?.[0]?.content?.parts
-                    ?.map(part => part.text || "")
-                    .join("")
-                    .trim();
-
+            const text = String(data.feedback || data.text || "").trim();
             if (!text) {
-                throw new Error("Gemini 응답에서 피드백 내용을 찾을 수 없습니다.");
+                throw new Error("AI 피드백 서버에서 피드백 내용을 받지 못했습니다.");
             }
-
             return text;
         } finally {
             clearTimeout(timeoutId);
