@@ -1,1070 +1,184 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>반응 속도 탐구 프로젝트 제안서 및 시뮬레이터</title>
-    
-    <!-- Tailwind CSS for styling -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- marked.js for parsing AI markdown response -->
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-
-    <!-- FontAwesome for icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap');
-        body { font-family: 'Noto Sans KR', sans-serif; background-color: #f3f4f6; }
-        
-        textarea, input[type="text"], select {
-            width: 100%;
-            border: 1px solid #d1d5db;
-            border-radius: 0.375rem;
-            padding: 0.5rem;
-            font-size: 0.875rem;
-            transition: border-color 0.2s;
-            word-break: keep-all; 
-        }
-        textarea:focus, input[type="text"]:focus, select:focus {
-            outline: none;
-            border-color: #3b82f6;
-            ring: 2px #3b82f6;
-        }
-
-        .loader {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #3b82f6;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        #custom-modal {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.6);
-            z-index: 9999;
-            align-items: center;
-            justify-content: center;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>반응 속도 탐구 프로젝트 제안서 및 시뮬레이터</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap');
+body{font-family:'Noto Sans KR',sans-serif;background:#f3f4f6}
+textarea,input[type="text"],select{width:100%;border:1px solid #d1d5db;border-radius:.375rem;padding:.5rem;font-size:.875rem;word-break:keep-all}
+textarea:focus,input[type="text"]:focus,select:focus{outline:none;border-color:#3b82f6}
+.loader{border:4px solid #f3f3f3;border-top:4px solid #3b82f6;border-radius:50%;width:40px;height:40px;animation:spin 1s linear infinite;margin:0 auto}
+@keyframes spin{to{transform:rotate(360deg)}}
+#custom-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;align-items:center;justify-content:center}
+</style>
 </head>
 <body class="text-gray-800 pb-20 relative">
-
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6">
-    
-    <!-- MAIN CONTAINER -->
-    <div id="print-area" class="bg-white p-8 rounded-xl shadow-lg border border-gray-200 mx-auto" style="max-width: 1000px;">
-        
-        <!-- Document Header -->
-        <div class="border-b-4 border-blue-800 pb-4 mb-6 flex flex-col gap-4">
-            <div class="text-center w-full">
-                <h1 class="text-2xl md:text-4xl font-extrabold text-gray-900 mb-3 whitespace-nowrap tracking-tight leading-tight">
-                    [반응 속도 탐구 프로젝트] 탐구 제안서 및 요약 보고서
-                </h1>
-                <p class="text-base md:text-lg text-gray-600 font-medium break-keep">2학년 물질과 에너지 수행평가</p>
-            </div>
-            
-            <!-- 웹 전용 입력 영역 (구글 시트 전송용) -->
-            <div class="flex justify-end w-full">
-                <div class="flex flex-row gap-4 items-center bg-blue-50 p-3 rounded-lg border border-blue-200 whitespace-nowrap">
-                    <div class="flex flex-row items-center gap-2">
-                        <label class="font-bold text-blue-900">교실</label>
-                        <input type="text" id="classroom" placeholder="입력" class="w-16 text-center border-blue-300">
-                    </div>
-                    <div class="flex flex-row items-center gap-2">
-                        <label class="font-bold text-blue-900">학번</label>
-                        <input type="text" id="studentId" placeholder="입력" class="w-20 text-center border-blue-300">
-                    </div>
-                    <div class="flex flex-row items-center gap-2">
-                        <label class="font-bold text-blue-900">이름</label>
-                        <input type="text" id="studentName" placeholder="입력" class="w-20 text-center border-blue-300">
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- 1. Basic Info Section -->
-        <section class="mb-8">
-            <h2 class="text-lg font-bold bg-blue-100 text-blue-800 p-2 rounded mb-4"><i class="fa-solid fa-pen mr-2"></i>1. 탐구 개요</h2>
-            <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
-                <div class="md:col-span-2 font-bold text-gray-700 pt-2 border-r">탐구 주제</div>
-                <div class="md:col-span-10"><input type="text" id="topic" placeholder="탐구 주제 작성"></div>
-                
-                <div class="md:col-span-2 font-bold text-gray-700 pt-2 border-r">탐구 동기</div>
-                <div class="md:col-span-10">
-                    <textarea id="motive" placeholder="구체적인 사례(교과서, 뉴스 기사 등)를 들어 탐구의 필요성 작성 (120~140자)" rows="3" class="min-h-[76px] resize-y leading-relaxed"></textarea>
-                </div>
-                
-                <div class="md:col-span-2 font-bold text-gray-700 pt-2 border-r">탐구 목적</div>
-                <div class="md:col-span-10">
-                    <textarea id="purpose" placeholder="두 가지 실험(I, II)을 실시하는 이유와 화학의 유용성 관련지어 작성" rows="3" class="min-h-[76px] resize-y leading-relaxed"></textarea>
-                </div>
-            </div>
-        </section>
-
-        <!-- 저장 및 1차 제출 -->
-        <div class="mb-5 p-4 bg-slate-50 border border-slate-200 rounded-xl">
-            <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
-                <div>
-                    <p class="font-bold text-slate-800"><i class="fa-solid fa-floppy-disk mr-1"></i>작성 내용 저장</p>
-                    <p class="text-xs text-slate-600 mt-1">작성 중인 내용은 5초마다 이 브라우저에 자동 저장됩니다.</p>
-                </div>
-                <div class="flex flex-wrap gap-2">
-                    <button type="button" onclick="saveDraftLocally()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold py-2 px-4 rounded-lg transition">
-                        저장하기
-                    </button>
-                    <button type="button" onclick="loadDraftLocally()" class="bg-white hover:bg-emerald-50 text-emerald-800 border border-emerald-300 text-sm font-bold py-2 px-4 rounded-lg transition">
-                        저장 내용 불러오기
-                    </button>
-                    <button id="btn-draft-combined" type="button" onclick="submitFirstDraft()" class="bg-slate-700 hover:bg-slate-800 text-white text-sm font-bold py-2 px-5 rounded-lg transition">
-                        <i class="fa-solid fa-paper-plane mr-1"></i>1차 제출하기
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Integrated AI Feedback: always visible, disabled until first submission -->
-        <div id="combined-feedback-area" class="mt-8 p-6 bg-indigo-50 border border-indigo-200 rounded-2xl">
-        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-            <div>
-                <h3 class="text-lg font-bold text-indigo-900">실험 Ⅰ·Ⅱ 통합 AI 피드백</h3>
-                <p class="text-sm text-indigo-700 mt-1">1차 제출 후 두 실험을 한 번에 점검합니다.</p>
-                <p class="text-sm font-medium text-indigo-800 mt-2"><i class="fa-solid fa-circle-info mr-1"></i>AI 피드백은 선택 사항이며, 피드백을 받지 않아도 최종 제출할 수 있습니다. 피드백을 받은 경우에도 내용을 반영하여 수정할지는 학생 스스로 판단합니다.</p>
-            </div>
-            <button id="btn-feedback-combined" type="button" onclick="getCombinedFeedback()" disabled
-                class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-5 rounded-xl transition opacity-50 cursor-not-allowed">
-                <i class="fa-solid fa-wand-magic-sparkles mr-2"></i><span class="inline-block text-center leading-tight">피드백<br>받기</span>
-            </button>
-            <p id="feedback-lock-message" class="text-xs text-gray-500 mt-2 text-right">1차 제출을 완료하면 버튼이 활성화됩니다.</p>
-        </div>
-        <div id="combined-loading" class="hidden mt-5 text-center text-indigo-700"></div>
-        <div id="combined-feedback-result" class="hidden mt-5 p-4 bg-white border border-indigo-100 rounded-xl text-sm leading-relaxed whitespace-normal"></div>
-    </div>
-
-        <div class="h-4" aria-hidden="true"></div>
-
-        <!-- 2. Experiment I Section -->
-        <section class="mb-10 border-2 border-blue-800 rounded-lg overflow-hidden">
-            <div class="bg-blue-800 text-white font-bold p-3 text-lg flex justify-between items-center">
-                <span>실험 Ⅰ 설계</span>
-                <div class="flex gap-2 items-center">
-                </div>
-            </div>
-            <div class="p-4 grid grid-cols-1 lg:grid-cols-2 gap-6">
-                
-                <!-- Left: Planning -->
-                <div>
-                    <div class="mb-4">
-                        <label class="font-bold text-gray-700 block mb-1">탐구 가설 1</label>
-                        <textarea id="exp1-hypothesis" rows="2" placeholder="조작 변인과 종속 변인을 포함하여 인과 관계가 드러나게 작성"></textarea>
-                    </div>
-                    
-                    <div class="bg-gray-50 p-3 rounded border mb-4">
-                        <span class="font-bold text-blue-700 block mb-2">변인 설정 및 조건값 (3개)</span>
-                        <div class="flex items-center gap-2 mb-2">
-                            <span class="text-sm font-semibold w-20">조작 변인 1</span>
-                            <select id="exp1-var" class="w-32">
-                                <option value="농도">농도</option>
-                                <option value="표면적">표면적</option>
-                                <option value="온도">온도</option>
-                                <option value="촉매">촉매</option>
-                            </select>
-                        </div>
-                        <div class="flex gap-2 mb-2 text-sm">
-                            <input type="text" id="exp1-cond1" placeholder="조건 1 값 입력" class="w-1/3">
-                            <input type="text" id="exp1-cond2" placeholder="조건 2 값 입력" class="w-1/3">
-                            <input type="text" id="exp1-cond3" placeholder="조건 3 값 입력" class="w-1/3">
-                        </div>
-                        <div class="flex items-center gap-2 mb-2 mt-3">
-                            <span class="text-sm font-semibold w-20">종속 변인 1</span>
-                            <input type="text" id="exp1-dep" placeholder="종속 변인 작성" class="flex-1">
-                        </div>
-                    </div>
-
-                    <div class="mb-4">
-                        <label class="font-bold text-gray-700 block mb-1">탐구 과정 (최소 3단계 ~ 최대 5단계)</label>
-                        <div class="flex flex-col gap-2" id="exp1-steps">
-                            <div class="flex items-center gap-2"><span class="w-5 text-center font-bold text-gray-500">1</span><textarea rows="4" placeholder="과정 1 입력" class="flex-1 min-h-[96px] resize-y leading-relaxed"></textarea></div>
-                            <div class="flex items-center gap-2"><span class="w-5 text-center font-bold text-gray-500">2</span><textarea rows="4" placeholder="과정 2 입력" class="flex-1 min-h-[96px] resize-y leading-relaxed"></textarea></div>
-                            <div class="flex items-center gap-2"><span class="w-5 text-center font-bold text-gray-500">3</span><textarea rows="4" placeholder="과정 3 입력" class="flex-1 min-h-[96px] resize-y leading-relaxed"></textarea></div>
-                            <div class="flex items-center gap-2"><span class="w-5 text-center font-bold text-gray-500">4</span><textarea rows="4" placeholder="과정 4 입력 (선택)" class="flex-1 min-h-[96px] resize-y leading-relaxed"></textarea></div>
-                            <div class="flex items-center gap-2"><span class="w-5 text-center font-bold text-gray-500">5</span><textarea rows="4" placeholder="과정 5 입력 (선택)" class="flex-1 min-h-[96px] resize-y leading-relaxed"></textarea></div>
-                        </div>
-                    </div>
-
-                    <div class="bg-gray-50 p-3 rounded border">
-                        <span class="font-bold text-blue-700 block mb-2">그래프 축 설정</span>
-                        <div class="flex flex-col gap-2 text-sm">
-                            <div class="flex items-center gap-2">
-                                <span class="font-semibold w-12 text-center text-blue-900 bg-blue-100 rounded">X축</span>
-                                <input type="text" id="exp1-xaxis" placeholder="X축 변인 및 단위 작성" class="flex-1">
-                            </div>
-                            <div class="flex items-center gap-2">
-                                <span class="font-semibold w-12 text-center text-blue-900 bg-blue-100 rounded">Y축</span>
-                                <input type="text" id="exp1-yaxis" placeholder="Y축 변인 및 단위 작성" class="flex-1">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Right: AI Feedback Panel -->
-                <div class="bg-blue-50 p-4 rounded-lg border border-blue-200 relative flex flex-col">
-                    <div class="flex justify-between items-center mb-2">
-                        <span class="font-bold text-blue-900"><i class="fa-solid fa-robot mr-2"></i>AI 선생님의 실험 설계 피드백</span>
-                    </div>
-                    
-                    <p class="text-red-500 text-xs font-bold mb-3">*주의! 먼저 상단의 '1차 제출하기'를 눌러야 피드백을 받을 수 있습니다.</p>
-
-                    <div id="exp1-waiting" class="flex-1 flex flex-col items-center justify-center text-center p-4 min-h-[150px]">
-                        <i class="fa-solid fa-clipboard-check text-4xl text-blue-300 mb-3"></i>
-                        <p class="text-blue-800 font-bold text-sm">실험 Ⅰ과 Ⅱ의 가설 및 과정을 모두 작성한 후<br><span class="text-blue-600">상단의 [1차 제출하기]</span> 버튼을 눌러주세요.</p>
-                    </div>
-
-                    <div id="exp1-loading" class="hidden flex-1 flex-col items-center justify-center text-center p-4 min-h-[150px]">
-                        
-
-    
-
-    <div class="loader mb-4"></div>
-                        <p class="text-blue-800 font-bold text-sm animate-pulse">선생님이 실험 1 설계를 분석하고 있습니다...</p>
-                    </div>
-
-                    <div id="exp1-result" class="hidden flex-1 bg-white p-4 rounded border border-blue-100 prose prose-sm max-w-none text-gray-700 h-auto break-words whitespace-pre-wrap"></div>
-
-                    <div class="mt-4 border-t border-blue-200 pt-4">
-                        <label class="font-bold text-blue-900 block mb-2 text-sm"><i class="fa-solid fa-pen-to-square mr-1"></i>피드백 반영 및 수정 내용 작성 (수정사항 없는 경우, '없음' 작성할 것 / 미작성 시 제출 안 됨)</label>
-                        <textarea id="exp1-reflection" rows="3" placeholder="AI 선생님의 피드백을 읽고, 나의 실험 1 설계에서 어떤 부분을 어떻게 수정했는지 기록하세요." class="w-full border-blue-300 bg-white text-sm p-2 rounded"></textarea>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- 3. Experiment II Section -->
-        <section class="mb-4 border-2 border-green-800 rounded-lg overflow-hidden">
-            <div class="bg-green-800 text-white font-bold p-3 text-lg flex justify-between items-center">
-                <span>실험 Ⅱ 설계</span>
-                <div class="flex gap-2 items-center">
-                </div>
-            </div>
-            <div class="p-4 grid grid-cols-1 lg:grid-cols-2 gap-6">
-                
-                <!-- Left: Planning -->
-                <div>
-                    <div class="mb-4">
-                        <label class="font-bold text-gray-700 block mb-1">탐구 가설 2</label>
-                        <textarea id="exp2-hypothesis" rows="2" placeholder="조작 변인과 종속 변인을 포함하여 인과 관계가 드러나게 작성"></textarea>
-                    </div>
-                    
-                    <div class="bg-gray-50 p-3 rounded border mb-4">
-                        <span class="font-bold text-green-700 block mb-2">변인 설정 및 조건값 (3개)</span>
-                        <div class="flex items-center gap-2 mb-2">
-                            <span class="text-sm font-semibold w-20">조작 변인 2</span>
-                            <select id="exp2-var" class="w-32">
-                                <option value="온도">온도</option>
-                                <option value="농도">농도</option>
-                                <option value="표면적">표면적</option>
-                                <option value="촉매">촉매</option>
-                            </select>
-                        </div>
-                        <div class="flex gap-2 mb-2 text-sm">
-                            <input type="text" id="exp2-cond1" placeholder="조건 1 값 입력" class="w-1/3">
-                            <input type="text" id="exp2-cond2" placeholder="조건 2 값 입력" class="w-1/3">
-                            <input type="text" id="exp2-cond3" placeholder="조건 3 값 입력" class="w-1/3">
-                        </div>
-                        <div class="flex items-center gap-2 mb-2 mt-3">
-                            <span class="text-sm font-semibold w-20">종속 변인 2</span>
-                            <input type="text" id="exp2-dep" placeholder="종속 변인 작성" class="flex-1">
-                        </div>
-                    </div>
-
-                    <div class="mb-4">
-                        <label class="font-bold text-gray-700 block mb-1">탐구 과정 (최소 3단계 ~ 최대 5단계)</label>
-                        <div class="flex flex-col gap-2" id="exp2-steps">
-                            <div class="flex items-center gap-2"><span class="w-5 text-center font-bold text-gray-500">1</span><textarea rows="4" placeholder="과정 1 입력" class="flex-1 min-h-[96px] resize-y leading-relaxed"></textarea></div>
-                            <div class="flex items-center gap-2"><span class="w-5 text-center font-bold text-gray-500">2</span><textarea rows="4" placeholder="과정 2 입력" class="flex-1 min-h-[96px] resize-y leading-relaxed"></textarea></div>
-                            <div class="flex items-center gap-2"><span class="w-5 text-center font-bold text-gray-500">3</span><textarea rows="4" placeholder="과정 3 입력" class="flex-1 min-h-[96px] resize-y leading-relaxed"></textarea></div>
-                            <div class="flex items-center gap-2"><span class="w-5 text-center font-bold text-gray-500">4</span><textarea rows="4" placeholder="과정 4 입력 (선택)" class="flex-1 min-h-[96px] resize-y leading-relaxed"></textarea></div>
-                            <div class="flex items-center gap-2"><span class="w-5 text-center font-bold text-gray-500">5</span><textarea rows="4" placeholder="과정 5 입력 (선택)" class="flex-1 min-h-[96px] resize-y leading-relaxed"></textarea></div>
-                        </div>
-                    </div>
-
-                    <div class="bg-gray-50 p-3 rounded border">
-                        <span class="font-bold text-green-700 block mb-2">그래프 축 설정</span>
-                        <div class="flex flex-col gap-2 text-sm">
-                            <div class="flex items-center gap-2">
-                                <span class="font-semibold w-12 text-center text-green-900 bg-green-100 rounded">X축</span>
-                                <input type="text" id="exp2-xaxis" placeholder="X축 변인 및 단위 작성" class="flex-1">
-                            </div>
-                            <div class="flex items-center gap-2">
-                                <span class="font-semibold w-12 text-center text-green-900 bg-green-100 rounded">Y축</span>
-                                <input type="text" id="exp2-yaxis" placeholder="Y축 변인 및 단위 작성" class="flex-1">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Right: AI Feedback Panel -->
-                <div class="bg-green-50 p-4 rounded-lg border border-green-200 relative flex flex-col">
-                    <div class="flex justify-between items-center mb-2">
-                        <span class="font-bold text-green-900"><i class="fa-solid fa-robot mr-2"></i>AI 선생님의 실험 설계 피드백</span>
-                    </div>
-                    
-                    <p class="text-red-500 text-xs font-bold mb-3">*주의! 먼저 상단의 '1차 제출하기'를 눌러야 피드백을 받을 수 있습니다.</p>
-
-                    <div id="exp2-waiting" class="flex-1 flex flex-col items-center justify-center text-center p-4 min-h-[150px]">
-                        <i class="fa-solid fa-clipboard-check text-4xl text-green-300 mb-3"></i>
-                        <p class="text-green-800 font-bold text-sm">실험 Ⅰ과 Ⅱ의 가설 및 과정을 모두 작성한 후<br><span class="text-green-600">상단의 [1차 제출하기]</span> 버튼을 눌러주세요.</p>
-                    </div>
-
-                    <div id="exp2-loading" class="hidden flex-1 flex-col items-center justify-center text-center p-4 min-h-[150px]">
-                        <div class="loader mb-4" style="border-top-color: #22c55e;"></div>
-                        <p class="text-green-800 font-bold text-sm animate-pulse">선생님이 실험 2 설계를 분석하고 있습니다...</p>
-                    </div>
-
-                    <div id="exp2-result" class="hidden flex-1 bg-white p-4 rounded border border-green-100 prose prose-sm max-w-none text-gray-700 h-auto break-words whitespace-pre-wrap"></div>
-
-                    <div class="mt-4 border-t border-green-200 pt-4">
-                        <label class="font-bold text-green-900 block mb-2 text-sm"><i class="fa-solid fa-pen-to-square mr-1"></i>피드백 반영 및 수정 내용 작성 (수정사항 없는 경우, '없음' 작성할 것 / 미작성 시 제출 안 됨)</label>
-                        <textarea id="exp2-reflection" rows="3" placeholder="AI 선생님의 피드백을 읽고, 나의 실험 2 설계에서 어떤 부분을 어떻게 수정했는지 기록하세요." class="w-full border-green-300 bg-white text-sm p-2 rounded"></textarea>
-                    </div>
-                </div>
-            </div>
-        </section>
-        
-        <div class="text-center text-gray-400 text-sm mt-8 pb-4">
-            본 문서는 물질과 에너지 수업 수행평가용으로 제작된 인터렉티브 탐구 제안서 요약 보고서입니다.
-        </div>
-    </div> <!-- End of Container -->
-
-    <!-- Action Buttons Bar -->
-    
-    
-
-    <div class="mt-8 mb-10 flex flex-col sm:flex-row justify-center gap-4 max-w-2xl mx-auto">
-        <button id="btn-final-submit" onclick="submitFinalDataAndDownload()" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-6 rounded-xl shadow-xl text-lg transition duration-200 transform hover:-translate-y-1">
-            <i class="fa-solid fa-cloud-arrow-up mr-2"></i>구글 시트 최종 전송 및 요약 파일(.txt) 다운로드
-        </button>
-    </div>
+<div id="print-area" class="bg-white p-8 rounded-xl shadow-lg border border-gray-200 mx-auto" style="max-width:1000px">
+<div class="border-b-4 border-blue-800 pb-4 mb-6 flex flex-col gap-4">
+<div class="text-center w-full">
+<h1 class="text-2xl md:text-4xl font-extrabold text-gray-900 mb-3 whitespace-nowrap tracking-tight leading-tight">[반응 속도 탐구 프로젝트] 탐구 제안서 및 요약 보고서</h1>
+<p class="text-base md:text-lg text-gray-600 font-medium">2학년 물질과 에너지 수행평가</p>
 </div>
+<div class="flex justify-end w-full"><div class="flex flex-row gap-4 items-center bg-blue-50 p-3 rounded-lg border border-blue-200 whitespace-nowrap">
+<div class="flex items-center gap-2"><label class="font-bold text-blue-900">교실</label><input type="text" id="classroom" placeholder="입력" class="w-16 text-center border-blue-300"></div>
+<div class="flex items-center gap-2"><label class="font-bold text-blue-900">학번</label><input type="text" id="studentId" placeholder="입력" class="w-20 text-center border-blue-300"></div>
+<div class="flex items-center gap-2"><label class="font-bold text-blue-900">이름</label><input type="text" id="studentName" placeholder="입력" class="w-20 text-center border-blue-300"></div>
+</div></div></div>
 
-<!-- Custom Message Modal -->
-<div id="custom-modal" class="flex">
-    <div class="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 shadow-2xl transform transition-all text-left flex flex-col max-h-[90vh]">
-        <div class="text-indigo-600 text-3xl mb-2 text-center" id="modal-icon"><i class="fa-solid fa-file-lines"></i></div>
-        <h3 class="text-lg leading-6 font-medium text-gray-900 mb-2 text-center" id="modal-title">알림</h3>
-        <p class="text-sm text-gray-500 mb-4 text-center" id="modal-message">메시지 내용</p>
+<section class="mb-8">
+<h2 class="text-lg font-bold bg-blue-100 text-blue-800 p-2 rounded mb-4"><i class="fa-solid fa-pen mr-2"></i>1. 탐구 개요</h2>
+<div class="grid grid-cols-1 md:grid-cols-12 gap-4">
+<div class="md:col-span-2 font-bold pt-2 border-r">탐구 주제</div><div class="md:col-span-10"><input type="text" id="topic" placeholder="탐구 주제 작성"></div>
+<div class="md:col-span-2 font-bold pt-2 border-r">탐구 동기</div><div class="md:col-span-10"><textarea id="motive" rows="3" placeholder="구체적인 사례(교과서, 뉴스 기사 등)를 들어 탐구의 필요성 작성 (120~140자)"></textarea></div>
+<div class="md:col-span-2 font-bold pt-2 border-r">탐구 목적</div><div class="md:col-span-10"><textarea id="purpose" rows="3" placeholder="두 가지 실험(I, II)을 실시하는 이유와 화학의 유용성 관련지어 작성"></textarea></div>
+</div></section>
 
-        <div class="flex gap-2">
-            <button id="modal-btn" onclick="closeModal()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded font-bold text-sm">
-                확인
-            </button>
-        </div>
-    </div>
+<div class="mb-5 p-4 bg-slate-50 border rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-3">
+<div><p class="font-bold"><i class="fa-solid fa-floppy-disk mr-1"></i>작성 내용 저장</p><p class="text-xs text-slate-600 mt-1">작성 중인 내용은 5초마다 이 브라우저에 자동 저장됩니다.</p></div>
+<div class="flex flex-wrap gap-2">
+<button onclick="saveDraftLocally()" class="bg-emerald-600 text-white text-sm font-bold py-2 px-4 rounded-lg">저장하기</button>
+<button onclick="loadDraftLocally()" class="bg-white text-emerald-800 border border-emerald-300 text-sm font-bold py-2 px-4 rounded-lg">저장 내용 불러오기</button>
+<button id="btn-draft-combined" onclick="submitFirstDraft()" class="bg-slate-700 text-white text-sm font-bold py-2 px-5 rounded-lg"><i class="fa-solid fa-paper-plane mr-1"></i>1차 제출하기</button>
+</div></div>
+
+<div id="combined-feedback-area" class="mt-8 p-6 bg-indigo-50 border border-indigo-200 rounded-2xl">
+<div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+<div><h3 class="text-lg font-bold text-indigo-900">실험 Ⅰ·Ⅱ 통합 AI 피드백</h3><p class="text-sm text-indigo-700 mt-1">1차 제출 후 두 실험을 한 번에 점검합니다.</p>
+<p class="text-sm font-medium text-indigo-800 mt-2"><i class="fa-solid fa-circle-info mr-1"></i>AI 피드백은 선택 사항이며, 피드백을 받지 않아도 최종 제출할 수 있습니다.</p></div>
+<button id="btn-feedback-combined" onclick="getCombinedFeedback()" disabled class="bg-indigo-600 text-white font-bold py-3 px-5 rounded-xl opacity-50 cursor-not-allowed"><i class="fa-solid fa-wand-magic-sparkles mr-2"></i>피드백<br>받기</button>
 </div>
+<p id="feedback-lock-message" class="text-xs text-gray-500 mt-2 text-right">1차 제출을 완료하면 버튼이 활성화됩니다.</p>
+<div id="combined-loading" class="hidden mt-5 text-center text-indigo-700"></div>
+<div id="combined-feedback-result" class="hidden mt-5 p-4 bg-white border border-indigo-100 rounded-xl text-sm"></div>
+</div>
+<div class="h-4"></div>
 
 <script>
-    function showMessage(msg) {
-        document.getElementById('modal-title').innerText = "알림";
-        document.getElementById('modal-message').innerText = msg;
-        document.getElementById('custom-modal').style.display = 'flex';
-    }
-
-    function closeModal() {
-        document.getElementById('custom-modal').style.display = 'none';
-    }
-
-    let isFirstSubmitted = false;
-
-    // Gemini API 키는 이 HTML에 저장하지 않습니다.
-    // AI 피드백 요청은 아래 Google Apps Script 서버를 통해 처리합니다.
-
-    // 구글 시트 웹앱 주소
-    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyplWtnh2kdh5skNqqAVxRwKN_Plbm7JFkS6w28LLVY7ptp8BhWVlxC60xoYfz-o2Yfjw/exec";
-
-    function value(id) {
-        return document.getElementById(id)?.value?.trim() || "";
-    }
-
-    function getSteps(expNo) {
-        return Array.from(document.querySelectorAll(`#exp${expNo}-steps textarea`))
-            .map(inp => inp.value.trim())
-            .filter(Boolean);
-    }
-
-    function getExperimentData(expNo) {
-        return {
-            hypothesis: value(`exp${expNo}-hypothesis`),
-            independentVariable: value(`exp${expNo}-var`),
-            conditions: [
-                value(`exp${expNo}-cond1`),
-                value(`exp${expNo}-cond2`),
-                value(`exp${expNo}-cond3`)
-            ],
-            dependentVariable: value(`exp${expNo}-dep`),
-            steps: getSteps(expNo),
-            xAxis: value(`exp${expNo}-xaxis`),
-            yAxis: value(`exp${expNo}-yaxis`)
-        };
-    }
-
-    function validateExperiment(expNo, requireGraph = true) {
-        const e = getExperimentData(expNo);
-
-        if (!e.hypothesis) return `실험 ${expNo}의 탐구 가설을 작성해주세요.`;
-        if (!e.independentVariable) return `실험 ${expNo}의 조작 변인을 작성해주세요.`;
-        if (e.conditions.some(v => !v)) return `실험 ${expNo}의 조건값 3개를 모두 작성해주세요.`;
-        if (!e.dependentVariable) return `실험 ${expNo}의 종속 변인을 작성해주세요.`;
-        if (e.steps.length < 3) return `실험 ${expNo}의 탐구 과정을 최소 3단계 이상 작성해주세요.`;
-
-        if (requireGraph && !e.xAxis) {
-            return `실험 ${expNo}의 그래프 X축을 작성해주세요.`;
-        }
-        if (requireGraph && !e.yAxis) {
-            return `실험 ${expNo}의 그래프 Y축을 작성해주세요.`;
-        }
-        return "";
-    }
-
-
-    document.addEventListener('DOMContentLoaded', () => {
-        const combinedBtn = document.getElementById('btn-feedback-combined');
-        if (combinedBtn && !isFirstSubmitted) {
-            combinedBtn.disabled = true;
-            combinedBtn.classList.add('opacity-50', 'cursor-not-allowed');
-            combinedBtn.title = '1차 제출 후 사용할 수 있습니다.';
-        }
-        ['btn-feedback-1', 'btn-feedback-2'].forEach(id => {
-            const btn = document.getElementById(id);
-            if (btn && !isFirstSubmitted) {
-                btn.disabled = true;
-                btn.classList.add('opacity-50', 'cursor-not-allowed');
-                btn.title = '1차 제출 후 사용할 수 있습니다.';
-            }
-        });
-    });
-
-
-    const LOCAL_DRAFT_KEY = 'reaction_rate_proposal_draft_v1';
-
-    function collectLocalDraft() {
-        const data = {};
-        document.querySelectorAll('input, textarea, select').forEach((el, index) => {
-            if (el.type === 'button' || el.type === 'submit') return;
-            const key = el.id || el.name || `field_${index}`;
-            if (el.type === 'checkbox' || el.type === 'radio') {
-                data[key] = { checked: el.checked };
-            } else {
-                data[key] = { value: el.value };
-            }
-        });
-        return data;
-    }
-
-    function saveDraftLocally(showNotice = true) {
-        try {
-            localStorage.setItem(LOCAL_DRAFT_KEY, JSON.stringify({
-                savedAt: new Date().toISOString(),
-                fields: collectLocalDraft()
-            }));
-            if (showNotice) showMessage("현재 입력 내용을 이 브라우저에 저장했습니다.");
-        } catch (error) {
-            console.error(error);
-            if (showNotice) showMessage("입력 내용을 저장하지 못했습니다.");
-        }
-    }
-
-    function loadDraftLocally() {
-        try {
-            const raw = localStorage.getItem(LOCAL_DRAFT_KEY);
-            if (!raw) {
-                showMessage("이 브라우저에 저장된 입력 내용이 없습니다.");
-                return;
-            }
-
-            const saved = JSON.parse(raw);
-            const fields = saved.fields || {};
-
-            document.querySelectorAll('input, textarea, select').forEach((el, index) => {
-                if (el.type === 'button' || el.type === 'submit') return;
-                const key = el.id || el.name || `field_${index}`;
-                const item = fields[key];
-                if (!item) return;
-
-                if (el.type === 'checkbox' || el.type === 'radio') {
-                    el.checked = !!item.checked;
-                } else if (Object.prototype.hasOwnProperty.call(item, 'value')) {
-                    el.value = item.value;
-                }
-                el.dispatchEvent(new Event('input', { bubbles: true }));
-                el.dispatchEvent(new Event('change', { bubbles: true }));
-            });
-
-            showMessage("저장된 입력 내용을 불러왔습니다.");
-        } catch (error) {
-            console.error(error);
-            showMessage("저장된 내용을 불러오지 못했습니다.");
-        }
-    }
-
-    setInterval(() => {
-        if (!finalSubmitCompleted) saveDraftLocally(false);
-    }, 5000);
-
-    let firstSubmitInProgress = false;
-    let finalSubmitInProgress = false;
-    let finalSubmitCompleted = false;
-
-    async function submitFirstDraft() {
-        if (firstSubmitInProgress) {
-            showMessage("1차 제출을 처리 중입니다. 잠시 기다려주세요.");
-            return;
-        }
-        if (isFirstSubmitted) {
-            showMessage("1차 제출이 이미 완료되었습니다.");
-            return;
-        }
-
-        const classroom = value('classroom');
-        const studentId = value('studentId');
-        const studentName = value('studentName');
-
-        if (!classroom) {
-            showMessage("교실을 입력해주세요.");
-            return;
-        }
-        if (!studentId) {
-            showMessage("학번을 입력해주세요.");
-            return;
-        }
-        if (!studentName) {
-            showMessage("이름을 입력해주세요.");
-            return;
-        }
-        if (!value('topic')) {
-            showMessage("탐구 주제를 작성해주세요.");
-            return;
-        }
-        if (!value('motive')) {
-            showMessage("탐구 동기를 작성해주세요.");
-            return;
-        }
-        if (!value('purpose')) {
-            showMessage("탐구 목적을 작성해주세요.");
-            return;
-        }
-
-        const err1 = validateExperiment(1, true);
-        if (err1) {
-            showMessage(err1);
-            return;
-        }
-
-        const err2 = validateExperiment(2, true);
-        if (err2) {
-            showMessage(err2);
-            return;
-        }
-
-        firstSubmitInProgress = true;
-        const draftCombined = document.getElementById('btn-draft-combined');
-        if (draftCombined) {
-            draftCombined.disabled = true;
-            draftCombined.classList.add('opacity-60', 'cursor-not-allowed');
-            draftCombined.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i>제출 중... 잠시 기다려주세요';
-        }
-        showMessage("1차 제출을 처리 중입니다. 버튼을 다시 누르지 말고 잠시 기다려주세요.");
-
-        const isSubmitted = await submitData('1차 제출(초안)');
-        firstSubmitInProgress = false;
-
-        if (!isSubmitted) {
-            if (draftCombined) {
-                draftCombined.disabled = false;
-                draftCombined.classList.remove('opacity-60', 'cursor-not-allowed');
-                draftCombined.innerHTML = '<i class="fa-solid fa-paper-plane mr-1"></i>1차 제출하기';
-            }
-            return;
-        }
-        if (isSubmitted) {
-            isFirstSubmitted = true;
-            const combinedBtn = document.getElementById('btn-feedback-combined');
-            if (combinedBtn) {
-                combinedBtn.disabled = false;
-                combinedBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-                combinedBtn.title = '';
-            }
-            const lockMessage = document.getElementById('feedback-lock-message');
-            if (lockMessage) lockMessage.style.display = 'none';
-
-            const draftCombined = document.getElementById('btn-draft-combined');
-            if (draftCombined) {
-                draftCombined.disabled = true;
-                draftCombined.classList.add('opacity-60', 'cursor-not-allowed');
-                draftCombined.innerHTML = '<i class="fa-solid fa-circle-check mr-1"></i>1차 제출 완료';
-            }
-
-            document.getElementById('exp1-waiting').innerHTML = `
-                <i class="fa-solid fa-clipboard-check text-4xl text-blue-300 mb-3"></i>
-                <p class="text-blue-800 font-bold text-sm">1차 제출이 완료되었습니다.<br>
-                <span class="text-blue-600">탐구 개요 아래의 [피드백 받기]</span> 버튼을 누르면 이곳에 실험 1 피드백이 표시됩니다.</p>`;
-
-            document.getElementById('exp2-waiting').innerHTML = `
-                <i class="fa-solid fa-clipboard-check text-4xl text-green-300 mb-3"></i>
-                <p class="text-green-800 font-bold text-sm">1차 제출이 완료되었습니다.<br>
-                <span class="text-green-600">탐구 개요 아래의 [피드백 받기]</span> 버튼을 누르면 이곳에 실험 2 피드백이 표시됩니다.</p>`;
-
-            showMessage("1차 제출이 완료되었습니다.");
-        }
-    }
-
-    async function submitFinalDataAndDownload() {
-        if (finalSubmitInProgress) {
-            showMessage("최종 제출을 처리 중입니다. 요약파일이 생성될 때까지 잠시 기다려주세요.");
-            return;
-        }
-        if (finalSubmitCompleted) {
-            showMessage("최종 제출이 이미 완료되었습니다. 중복 제출은 할 수 없습니다.");
-            return;
-        }
-
-        if (!isFirstSubmitted) {
-            showMessage("먼저 '1차 제출하기' 버튼을 눌러 초안을 제출해주세요.");
-            return;
-        }
-
-        const classroom = value('classroom');
-        const studentId = value('studentId');
-        const studentName = value('studentName');
-
-        if (!classroom || !studentId || !studentName) {
-            showMessage("교실, 학번, 이름을 먼저 입력해주세요.");
-            return;
-        }
-
-        const topic = value('topic');
-        const motive = value('motive');
-        const purpose = value('purpose');
-        const ref1 = value('exp1-reflection');
-        const ref2 = value('exp2-reflection');
-
-        if (!topic || !motive || !purpose || !ref1 || !ref2) {
-            showMessage("탐구 개요와 피드백 반영 내용을 모두 작성해주세요.");
-            return;
-        }
-
-        const err1 = validateExperiment(1, true);
-        if (err1) {
-            showMessage(err1);
-            return;
-        }
-        const err2 = validateExperiment(2, true);
-        if (err2) {
-            showMessage(err2);
-            return;
-        }
-
-        finalSubmitInProgress = true;
-        const finalSubmitBtn = document.getElementById('btn-final-submit');
-        if (finalSubmitBtn) {
-            finalSubmitBtn.disabled = true;
-            finalSubmitBtn.classList.add('opacity-60', 'cursor-not-allowed');
-            finalSubmitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i>제출 중... 잠시 기다려주세요';
-        }
-        showMessage("최종 제출을 처리 중입니다. 요약파일이 생성될 때까지 버튼을 다시 누르지 말고 잠시 기다려주세요.");
-
-        const isSubmitted = await submitData('최종 제출(수정본)');
-        if (!isSubmitted) {
-            finalSubmitInProgress = false;
-            if (finalSubmitBtn) {
-                finalSubmitBtn.disabled = false;
-                finalSubmitBtn.classList.remove('opacity-60', 'cursor-not-allowed');
-                finalSubmitBtn.innerHTML = '<i class="fa-solid fa-file-arrow-down mr-2"></i>최종 제출 및 요약파일 받기';
-            }
-            return;
-        }
-
-        // 전송이 성공한 순간부터 중복 최종 제출을 막습니다.
-        finalSubmitCompleted = true;
-
-        const e1 = getExperimentData(1);
-        const e2 = getExperimentData(2);
-
-        const formatSteps = steps =>
-            steps.map((step, idx) => `  ${idx + 1}. ${step}`).join("\n");
-
-        const summaryText = `[반응 속도 탐구 프로젝트 핵심 내용 요약]
-1. 탐구 주제: ${topic}
-- 탐구 동기: ${motive}
-- 탐구 목적: ${purpose}
-
-2. 실험 Ⅰ 설계
-- 탐구 가설: ${e1.hypothesis}
-- 조작 변인: ${e1.independentVariable}
-- 조건값: ${e1.conditions.join(", ")}
-- 종속 변인: ${e1.dependentVariable}
-- 탐구 과정:
-${formatSteps(e1.steps)}
-- 그래프 축: X축(${e1.xAxis}) / Y축(${e1.yAxis})
-
-3. 실험 Ⅱ 설계
-- 탐구 가설: ${e2.hypothesis}
-- 조작 변인: ${e2.independentVariable}
-- 조건값: ${e2.conditions.join(", ")}
-- 종속 변인: ${e2.dependentVariable}
-- 탐구 과정:
-${formatSteps(e2.steps)}
-- 그래프 축: X축(${e2.xAxis}) / Y축(${e2.yAxis})
-`;
-
-        const blob = new Blob([summaryText], { type: 'text/plain;charset=utf-8' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `(${classroom}) ${studentId} ${studentName}_반응속도탐구보고서.txt`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-
-        finalSubmitInProgress = false;
-        if (finalSubmitBtn) {
-            finalSubmitBtn.disabled = true;
-            finalSubmitBtn.classList.add('opacity-60', 'cursor-not-allowed');
-            finalSubmitBtn.innerHTML = '<i class="fa-solid fa-circle-check mr-2"></i>최종 제출 완료';
-        }
-        showMessage("최종 전송과 요약 텍스트 파일 생성이 완료되었습니다.");
-    }
-
-    async function submitData(submitType) {
-        const e1 = getExperimentData(1);
-        const e2 = getExperimentData(2);
-
-        // Google Sheet에는 합의한 핵심 항목만 전송합니다.
-        const payload = {
-            submitType: submitType,
-            classroom: value('classroom'),
-            studentId: value('studentId'),
-            studentName: value('studentName'),
-            topic: value('topic'),
-            motive: value('motive'),
-            purpose: value('purpose'),
-            exp1_hypothesis: e1.hypothesis,
-            exp1_var: e1.independentVariable,
-            exp1_reflection: value('exp1-reflection'),
-            exp2_hypothesis: e2.hypothesis,
-            exp2_var: e2.independentVariable,
-            exp2_reflection: value('exp2-reflection')
-        };
-
-        try {
-            await fetch(GOOGLE_SCRIPT_URL, {
-                method: "POST",
-                mode: "no-cors",
-                headers: {
-                    "Content-Type": "text/plain;charset=utf-8"
-                },
-                body: JSON.stringify(payload)
-            });
-            return true;
-        } catch (error) {
-            console.error("Google Sheet submit error:", error);
-            showMessage("구글 시트로 전송 요청을 보내지 못했습니다. 브라우저 콘솔을 확인해주세요.");
-            return false;
-        }
-    }
-
-    function buildFeedbackPrompt(expNo) {
-        const e = getExperimentData(expNo);
-
-        return `당신은 고등학교 화학 반응 속도 탐구의 중간점검 교사입니다.
-학생은 이후 자신의 탐구 설계를 AI에 입력하여 가상 실험 결과, 그래프, 인터랙티브 시뮬레이션을 제작할 예정입니다.
-
-탐구 주제, 탐구 동기, 탐구 목적은 피드백하지 마세요.
-아래 실험 설계 정보만 점검하세요.
-
-[실험 ${expNo}]
-- 가설: ${e.hypothesis}
-- 조작변인: ${e.independentVariable}
-- 조건값 3개: ${e.conditions.join(" / ")}
-- 측정값·종속변인: ${e.dependentVariable}
-- 탐구 과정:
-${e.steps.map((s, i) => `${i + 1}. ${s}`).join("\n")}
-- 그래프 X축: ${e.xAxis}
-- 그래프 Y축: ${e.yAxis}
-
-[점검 항목]
-1. 가설
-조작변인의 변화와 관찰·측정하려는 결과 사이의 관계를 탐구할 수 있는지 확인하세요.
-
-2. 조작변인·조건값
-조작변인이 명확하고 3가지 조건값이 서로 비교 가능한지 확인하세요. 값과 단위가 필요한 경우 명확한지도 확인하세요.
-
-3. 측정값·종속변인
-AI가 가상 실험 결과를 수치 또는 비교 가능한 데이터로 생성할 수 있을 정도로 측정 대상이 명확한지 확인하세요.
-
-4. 탐구 과정
-조건을 변화시키고 결과를 측정·기록·비교하는 가상 실험을 구성할 수 있을 정도로 과정이 구체적인지 확인하세요.
-
-5. 그래프 설계
-학생이 작성한 X축과 Y축으로 가상 데이터를 만들고 반응 속도의 변화, 추세 또는 조건별 차이를 그래프로 표현할 수 있는지 확인하세요.
-Y축이 반드시 학생이 적은 종속변인과 동일할 필요는 없습니다.
-시간에 따른 변화 곡선, 조건별 비교, 조작변인과 반응 속도의 관계 등 다양한 그래프를 인정하세요.
-그래프가 실제로 그려질 수 있다면 특정 형태로 바꾸도록 요구하지 마세요.
-
-[피드백 원칙]
-- 문제가 없는 항목은 "적절함"이라고 짧게 알려주세요.
-- 문제가 있는 항목만 다음 세 요소로 간단히 작성하세요.
-  보완할 점: 무엇이 부족한지
-  이유: 왜 가상 실험·그래프·시뮬레이션 제작에 문제가 되는지
-  대안: 학생이 어떤 방향으로 수정하면 되는지
-- 대안은 수정 방향만 제시하고 정답, 완성 문장, 구체적인 조건값, 완성된 실험 절차를 대신 작성하지 마세요.
-- 특정 화학 반응을 새로 제안하거나 특정 반응을 사용하라고 요구하지 마세요.
-- 불필요한 칭찬이나 긴 설명은 하지 마세요.
-- 전체 피드백은 가능한 한 짧고 명확하게 작성하세요.
-- 마지막에 "시뮬레이션 제작 준비"를 적고 "가능", "보완 후 가능", "정보 부족" 중 하나로 표시하세요.
-
-[출력 형식]
-### 1. 가설
-...
-### 2. 조작변인·조건값
-...
-### 3. 측정값·종속변인
-...
-### 4. 탐구 과정
-...
-### 5. 그래프 설계
-...
-### 시뮬레이션 제작 준비
-가능 / 보완 후 가능 / 정보 부족`;
-    }
-
-
-    function buildCombinedFeedbackPrompt() {
-        const e1 = getExperimentData(1);
-        const e2 = getExperimentData(2);
-
-        const pack = (n, e) => `[실험 ${n}]
-가설: ${e.hypothesis}
-조작변인: ${e.independentVariable}
-조건값: ${e.conditions.join(" / ")}
-측정값·종속변인: ${e.dependentVariable}
-탐구과정: ${e.steps.map((s, i) => `${i + 1}. ${s}`).join(" | ")}
-X축: ${e.xAxis}
-Y축: ${e.yAxis}`;
-
-        return `고등학교 화학 반응 속도 탐구 설계를 점검하세요. 학생은 이후 AI로 가상 실험 결과·그래프·시뮬레이션을 제작합니다.
-탐구 주제·동기·목적은 피드백하지 마세요.
-각 실험에서 다음 5가지만 확인하세요: 가설, 조작변인·조건값, 측정값·종속변인, 탐구과정, 그래프 설계.
-그래프는 시간-측정량 곡선, 조건별 비교, 조작변인-반응속도 관계 등 실제 가상 데이터로 그릴 수 있으면 인정하고 특정 형식을 강요하지 마세요.
-문제가 없는 항목은 절대 출력하지 마세요.
-문제가 있는 항목만 출력하되, 각 항목의 피드백은 "보완할 점/이유/대안"이라는 표제를 나누지 말고 수정 필요성·이유·수정 방향이 자연스럽게 이어지는 한 문장으로 작성하세요.
-정답, 완성 문장, 구체적인 조건값, 완성된 실험 절차, 새로운 화학 반응은 대신 제시하지 마세요.
-반드시 다음 형식으로 한 줄만 출력하세요.
-[실험1] 실험 1에서 수정이 필요한 내용 또는 "수정이 필요한 항목이 없습니다." [실험2] 실험 2에서 수정이 필요한 내용 또는 "수정이 필요한 항목이 없습니다."
-각 실험에서 문제가 여러 개면 " | "로 구분하고 줄바꿈은 하지 마세요.
-
-${pack(1, e1)}
-${pack(2, e2)}`;
-    }
-
-    async function getCombinedFeedback() {
-        const btn = document.getElementById('btn-feedback-combined');
-        const loading = document.getElementById('combined-loading');
-        const result = document.getElementById('combined-feedback-result');
-
-        if (!isFirstSubmitted) {
-            showMessage("먼저 1차 제출을 완료해주세요.");
-            return;
-        }
-
-        const err1 = validateExperiment(1, true);
-        if (err1) { showMessage(err1); return; }
-        const err2 = validateExperiment(2, true);
-        if (err2) { showMessage(err2); return; }
-
-        btn.disabled = true;
-        btn.classList.add('opacity-50', 'cursor-not-allowed');
-        loading.classList.remove('hidden');
-        loading.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i>실험 1·2를 함께 점검하고 있습니다.';
-        result.classList.add('hidden');
-
-        try {
-            let feedback = await fetchFeedbackWithRetry(buildCombinedFeedbackPrompt(), 1);
-            feedback = String(feedback || '')
-                .replace(/\r?\n+/g, ' ')
-                .replace(/\s{2,}/g, ' ')
-                .trim();
-
-            // 한 번의 API 응답을 실험 1/2로 나누어 기존 각 실험 피드백 영역에 표시합니다.
-            const match = feedback.match(/\[실험1\]\s*(.*?)\s*\[실험2\]\s*(.*)$/);
-            const feedback1Text = match ? match[1].trim() : feedback;
-            const feedback2Text = match ? match[2].trim() : "피드백 내용을 구분하지 못했습니다.";
-
-            const exp1Result = document.getElementById('exp1-result');
-            const exp2Result = document.getElementById('exp2-result');
-            const exp1Waiting = document.getElementById('exp1-waiting');
-            const exp2Waiting = document.getElementById('exp2-waiting');
-
-            if (exp1Waiting) exp1Waiting.classList.add('hidden');
-            if (exp2Waiting) exp2Waiting.classList.add('hidden');
-
-            if (exp1Result) {
-                exp1Result.textContent = feedback1Text || "수정이 필요한 항목이 없습니다.";
-                exp1Result.classList.remove('hidden');
-            }
-            if (exp2Result) {
-                exp2Result.textContent = feedback2Text || "수정이 필요한 항목이 없습니다.";
-                exp2Result.classList.remove('hidden');
-            }
-
-            // 통합 영역에는 결과를 중복 출력하지 않고 안내만 표시합니다.
-            result.textContent = "실험 1과 실험 2의 피드백이 각 실험 설계 영역에 표시되었습니다.";
-            result.classList.remove('hidden');
-        } catch (error) {
-            console.error(error);
-            result.textContent = "AI 피드백 요청에 실패했습니다. 잠시 후 다시 시도해주세요.";
-            result.classList.remove('hidden');
-        } finally {
-            loading.classList.add('hidden');
-            btn.disabled = false;
-            btn.classList.remove('opacity-50', 'cursor-not-allowed');
-        }
-    }
-
-    async function getFeedback1() {
-        await getFeedback(1);
-    }
-
-    async function getFeedback2() {
-        await getFeedback(2);
-    }
-
-    async function getFeedback(expNo) {
-        if (!isFirstSubmitted) {
-            showMessage("먼저 1차 제출을 완료해주세요.");
-            return;
-        }
-
-        const error = validateExperiment(expNo, true);
-        if (error) {
-            showMessage(error);
-            return;
-        }
-
-        const waiting = document.getElementById(`exp${expNo}-waiting`);
-        const loading = document.getElementById(`exp${expNo}-loading`);
-        const result = document.getElementById(`exp${expNo}-result`);
-        const button = document.getElementById(`btn-feedback-${expNo}`);
-
-        waiting.classList.add('hidden');
-        result.classList.add('hidden');
-        loading.classList.remove('hidden');
-        button.disabled = true;
-
-        try {
-            const resultText = await fetchFeedbackWithRetry(
-                buildFeedbackPrompt(expNo),
-                expNo
-            );
-
-            // 서버 응답을 markdown으로 표시합니다.
-            // 서버에서는 학생 입력을 다시 HTML로 반환하지 않는 것을 권장합니다.
-            result.innerHTML = marked.parse(resultText);
-            result.classList.remove('hidden');
-            button.innerText = "피드백 다시 받기";
-        } catch (error) {
-            console.error("Feedback error:", error);
-            result.textContent = "피드백을 가져오지 못했습니다. 잠시 후 다시 시도해주세요.";
-            result.classList.remove('hidden');
-        } finally {
-            loading.classList.add('hidden');
-            button.disabled = false;
-        }
-    }
-
-    async function fetchFeedbackWithRetry(promptText, experimentNo, retries = 3) {
-        let lastError;
-
-        for (let i = 0; i <= retries; i++) {
-            try {
-                return await fetchFeedback(promptText, experimentNo);
-            } catch (err) {
-                lastError = err;
-
-                if (i === retries) break;
-
-                // 무료 API의 순간 요청 제한(429)에 걸리면 학생마다 다른 시간만큼 기다렸다 재시도합니다.
-                const isRateLimit = err && err.status === 429;
-                const waitMs = isRateLimit
-                    ? (20000 + Math.floor(Math.random() * 20000)) * (i + 1)
-                    : 2000 * (i + 1);
-
-                const loading = document.getElementById('combined-loading') || document.getElementById(`exp${experimentNo}-loading`);
-                if (loading && isRateLimit) {
-                    loading.innerHTML = `
-                        <i class="fa-solid fa-hourglass-half fa-spin text-3xl mb-3"></i>
-                        <p class="font-bold">현재 피드백 요청이 많습니다.</p>
-                        <p class="text-sm mt-1">잠시 기다려 주세요. 자동으로 다시 시도합니다.</p>`;
-                }
-
-                await new Promise(resolve => setTimeout(resolve, waitMs));
-            }
-        }
-
-        throw lastError || new Error("피드백 요청에 실패했습니다.");
-    }
-
-    async function fetchFeedback(promptText, experimentNo) {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 60000);
-
-        try {
-            const response = await fetch(GOOGLE_SCRIPT_URL, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "text/plain;charset=utf-8"
-                },
-                body: JSON.stringify({
-                    action: "geminiFeedback",
-                    prompt: promptText,
-                    experimentNo: experimentNo
-                }),
-                signal: controller.signal
-            });
-
-            let data = {};
-            try {
-                data = await response.json();
-            } catch (_) {
-                throw new Error("AI 피드백 서버의 응답을 읽지 못했습니다.");
-            }
-
-            if (!response.ok || data.ok === false) {
-                const message = data.message || `AI 피드백 서버 오류 (${response.status})`;
-                const err = new Error(message);
-                err.status = data.status || response.status;
-                throw err;
-            }
-
-            const text = String(data.feedback || data.text || "").trim();
-            if (!text) {
-                throw new Error("AI 피드백 서버에서 피드백 내용을 받지 못했습니다.");
-            }
-            return text;
-        } finally {
-            clearTimeout(timeoutId);
-        }
-    }
+function experimentHtml(n,color){
+ const c=color;
+ return `<section class="mb-10 border-2 border-${c}-800 rounded-lg overflow-hidden">
+ <div class="bg-${c}-800 text-white font-bold p-3 text-lg">실험 ${n===1?'Ⅰ':'Ⅱ'} 설계</div>
+ <div class="p-4 grid grid-cols-1 lg:grid-cols-2 gap-6"><div>
+ <div class="mb-4"><label class="font-bold block mb-1">탐구 가설 ${n}</label><textarea id="exp${n}-hypothesis" rows="2" placeholder="조작 변인과 종속 변인을 포함하여 인과 관계가 드러나게 작성"></textarea></div>
+ <div class="bg-gray-50 p-3 rounded border mb-4"><span class="font-bold text-${c}-700 block mb-2">변인 설정 및 조건값 (3개)</span>
+ <div class="flex items-center gap-2 mb-2"><span class="text-sm font-semibold w-20">조작 변인 ${n}</span><select id="exp${n}-var" class="w-32"><option>농도</option><option>표면적</option><option>온도</option><option>촉매</option></select></div>
+ <div class="flex gap-2 mb-2"><input id="exp${n}-cond1" placeholder="조건 1 값 입력"><input id="exp${n}-cond2" placeholder="조건 2 값 입력"><input id="exp${n}-cond3" placeholder="조건 3 값 입력"></div>
+ <div class="flex items-center gap-2 mt-3"><span class="text-sm font-semibold w-20">종속 변인 ${n}</span><input id="exp${n}-dep" placeholder="종속 변인 작성"></div></div>
+ <div class="mb-4"><label class="font-bold block mb-1">탐구 과정 (최소 3단계 ~ 최대 5단계)</label><div id="exp${n}-steps" class="flex flex-col gap-2">${[1,2,3,4,5].map(i=>`<div class="flex gap-2"><span class="w-5 font-bold text-gray-500">${i}</span><textarea rows="4" placeholder="과정 ${i} 입력${i>3?' (선택)':''}"></textarea></div>`).join('')}</div></div>
+ <div class="bg-gray-50 p-3 rounded border"><span class="font-bold text-${c}-700 block mb-2">그래프 축 설정</span>
+ <div class="flex gap-2 mb-2"><span class="font-semibold w-12">X축</span><input id="exp${n}-xaxis" placeholder="X축 변인 및 단위 작성"></div>
+ <div class="flex gap-2"><span class="font-semibold w-12">Y축</span><input id="exp${n}-yaxis" placeholder="Y축 변인 및 단위 작성"></div></div>
+ </div><div class="bg-${c}-50 p-4 rounded-lg border border-${c}-200 flex flex-col">
+ <span class="font-bold text-${c}-900"><i class="fa-solid fa-robot mr-2"></i>AI 선생님의 실험 설계 피드백</span>
+ <p class="text-red-500 text-xs font-bold my-3">*주의! 먼저 상단의 '1차 제출하기'를 눌러야 피드백을 받을 수 있습니다.</p>
+ <div id="exp${n}-waiting" class="flex-1 flex items-center justify-center text-center p-4 min-h-[150px]"><p class="text-${c}-800 font-bold text-sm">1차 제출 후 통합 피드백 버튼을 눌러주세요.</p></div>
+ <div id="exp${n}-result" class="hidden flex-1 bg-white p-4 rounded border whitespace-pre-wrap"></div>
+ <div class="mt-4 border-t pt-4"><label class="font-bold text-${c}-900 block mb-2 text-sm">피드백 반영 및 수정 내용 작성 (수정사항 없는 경우, '없음')</label><textarea id="exp${n}-reflection" rows="3"></textarea></div>
+ </div></div></section>`;
+}
+document.write(experimentHtml(1,'blue'));
+document.write(experimentHtml(2,'green'));
 </script>
-</body>
-</html>
+
+<div class="text-center text-gray-400 text-sm mt-8 pb-4">본 문서는 물질과 에너지 수업 수행평가용으로 제작된 인터렉티브 탐구 제안서 요약 보고서입니다.</div>
+</div>
+<div class="mt-8 mb-10 flex justify-center max-w-2xl mx-auto">
+<button id="btn-final-submit" onclick="submitFinalDataAndDownload()" class="flex-1 bg-red-600 text-white font-bold py-4 px-6 rounded-xl shadow-xl text-lg"><i class="fa-solid fa-cloud-arrow-up mr-2"></i>구글 시트 최종 전송 및 요약 파일(.txt) 다운로드</button>
+</div></div>
+
+<div id="custom-modal" class="flex"><div class="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 shadow-2xl text-center">
+<h3 class="text-lg font-medium mb-2">알림</h3><p id="modal-message" class="text-sm text-gray-500 mb-4"></p>
+<button onclick="closeModal()" class="w-full bg-blue-600 text-white py-2 rounded font-bold">확인</button></div></div>
+
+<script>
+const GOOGLE_SCRIPT_URL="https://script.google.com/macros/s/AKfycbyplWtnh2kdh5skNqqAVxRwKN_Plbm7JFkS6w28LLVY7ptp8BhWVlxC60xoYfz-o2Yfjw/exec";
+let isFirstSubmitted=false,firstSubmitInProgress=false,finalSubmitInProgress=false,finalSubmitCompleted=false;
+const LOCAL_DRAFT_KEY='reaction_rate_proposal_draft_v1';
+function showMessage(m){document.getElementById('modal-message').innerText=m;document.getElementById('custom-modal').style.display='flex'}
+function closeModal(){document.getElementById('custom-modal').style.display='none'}
+function value(id){return document.getElementById(id)?.value?.trim()||""}
+function getSteps(n){return [...document.querySelectorAll(`#exp${n}-steps textarea`)].map(x=>x.value.trim()).filter(Boolean)}
+function getExperimentData(n){return{hypothesis:value(`exp${n}-hypothesis`),independentVariable:value(`exp${n}-var`),conditions:[value(`exp${n}-cond1`),value(`exp${n}-cond2`),value(`exp${n}-cond3`)],dependentVariable:value(`exp${n}-dep`),steps:getSteps(n),xAxis:value(`exp${n}-xaxis`),yAxis:value(`exp${n}-yaxis`)}}
+function validateExperiment(n){const e=getExperimentData(n);if(!e.hypothesis)return`실험 ${n}의 탐구 가설을 작성해주세요.`;if(e.conditions.some(v=>!v))return`실험 ${n}의 조건값 3개를 모두 작성해주세요.`;if(!e.dependentVariable)return`실험 ${n}의 종속 변인을 작성해주세요.`;if(e.steps.length<3)return`실험 ${n}의 탐구 과정을 최소 3단계 이상 작성해주세요.`;if(!e.xAxis||!e.yAxis)return`실험 ${n}의 그래프 X축과 Y축을 작성해주세요.`;return""}
+function collectLocalDraft(){const d={};document.querySelectorAll('input,textarea,select').forEach((el,i)=>d[el.id||`field_${i}`]={value:el.value});return d}
+function saveDraftLocally(notice=true){localStorage.setItem(LOCAL_DRAFT_KEY,JSON.stringify({fields:collectLocalDraft()}));if(notice)showMessage("현재 입력 내용을 이 브라우저에 저장했습니다.")}
+function loadDraftLocally(){const raw=localStorage.getItem(LOCAL_DRAFT_KEY);if(!raw)return showMessage("저장된 입력 내용이 없습니다.");const f=JSON.parse(raw).fields||{};document.querySelectorAll('input,textarea,select').forEach((el,i)=>{const x=f[el.id||`field_${i}`];if(x)el.value=x.value});showMessage("저장된 입력 내용을 불러왔습니다.")}
+setInterval(()=>{if(!finalSubmitCompleted)saveDraftLocally(false)},5000);
+
+async function submitData(submitType){
+ const e1=getExperimentData(1),e2=getExperimentData(2);
+ const payload={submitType,classroom:value('classroom'),studentId:value('studentId'),studentName:value('studentName'),topic:value('topic'),motive:value('motive'),purpose:value('purpose'),exp1_hypothesis:e1.hypothesis,exp1_var:e1.independentVariable,exp1_reflection:value('exp1-reflection'),exp2_hypothesis:e2.hypothesis,exp2_var:e2.independentVariable,exp2_reflection:value('exp2-reflection')};
+ try{await fetch(GOOGLE_SCRIPT_URL,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(payload)});return true}catch(e){console.error(e);showMessage("구글 시트로 전송 요청을 보내지 못했습니다.");return false}
+}
+async function submitFirstDraft(){
+ if(firstSubmitInProgress||isFirstSubmitted)return showMessage("1차 제출이 이미 완료되었거나 처리 중입니다.");
+ if(!value('classroom')||!value('studentId')||!value('studentName')||!value('topic')||!value('motive')||!value('purpose'))return showMessage("교실, 학번, 이름과 탐구 개요를 모두 작성해주세요.");
+ const a=validateExperiment(1)||validateExperiment(2);if(a)return showMessage(a);
+ firstSubmitInProgress=true;const ok=await submitData('1차 제출(초안)');firstSubmitInProgress=false;if(!ok)return;
+ isFirstSubmitted=true;const b=document.getElementById('btn-feedback-combined');b.disabled=false;b.classList.remove('opacity-50','cursor-not-allowed');document.getElementById('feedback-lock-message').style.display='none';document.getElementById('btn-draft-combined').disabled=true;document.getElementById('btn-draft-combined').innerHTML='<i class="fa-solid fa-circle-check mr-1"></i>1차 제출 완료';showMessage("1차 제출이 완료되었습니다.");
+}
+function buildCombinedFeedbackPrompt(){
+ const pack=(n,e)=>`[실험 ${n}]\n가설: ${e.hypothesis}\n조작변인: ${e.independentVariable}\n조건값: ${e.conditions.join(" / ")}\n측정값·종속변인: ${e.dependentVariable}\n탐구과정: ${e.steps.map((s,i)=>`${i+1}. ${s}`).join(" | ")}\nX축: ${e.xAxis}\nY축: ${e.yAxis}`;
+ return `고등학교 화학 반응 속도 탐구 설계를 점검하세요. 학생은 이후 AI로 가상 실험 결과·그래프·시뮬레이션을 제작합니다.
+탐구 주제·동기·목적은 피드백하지 마세요. 각 실험에서 가설, 조작변인·조건값, 측정값·종속변인, 탐구과정, 그래프 설계만 확인하세요.
+그래프는 실제 가상 데이터로 그릴 수 있으면 인정하고 특정 형식을 강요하지 마세요. 문제가 없는 항목은 출력하지 마세요.
+정답, 완성 문장, 구체적인 조건값, 완성된 실험 절차, 새로운 화학 반응은 대신 제시하지 마세요.
+반드시 한 줄로 [실험1] ... [실험2] ... 형식으로 출력하세요. 문제가 여러 개면 " | "로 구분하세요.
+${pack(1,getExperimentData(1))}
+${pack(2,getExperimentData(2))}`;
+}
+
+/* 핵심 수정: Apps Script ContentService를 브라우저 fetch로 읽지 않고
+   JSONP GET 요청으로 피드백 결과를 받습니다. */
+function fetchFeedbackJSONP(promptText){
+ return new Promise((resolve,reject)=>{
+  const callbackName='geminiCallback_'+Date.now()+'_'+Math.floor(Math.random()*100000);
+  const script=document.createElement('script');
+  const timer=setTimeout(()=>cleanup(new Error("AI 피드백 서버 응답 시간이 초과되었습니다.")),60000);
+  function cleanup(err,data){
+   clearTimeout(timer);try{script.remove()}catch(_){}
+   try{delete window[callbackName]}catch(_){window[callbackName]=undefined}
+   if(err)reject(err);else resolve(data);
+  }
+  window[callbackName]=(data)=>cleanup(null,data);
+  script.onerror=()=>cleanup(new Error("AI 피드백 서버에 연결하지 못했습니다."));
+  const qs=new URLSearchParams({action:'geminiFeedback',callback:callbackName,prompt:promptText});
+  script.src=GOOGLE_SCRIPT_URL+'?'+qs.toString();
+  document.body.appendChild(script);
+ });
+}
+async function getCombinedFeedback(){
+ if(!isFirstSubmitted)return showMessage("먼저 1차 제출을 완료해주세요.");
+ const err=validateExperiment(1)||validateExperiment(2);if(err)return showMessage(err);
+ const btn=document.getElementById('btn-feedback-combined'),loading=document.getElementById('combined-loading'),result=document.getElementById('combined-feedback-result');
+ btn.disabled=true;loading.classList.remove('hidden');loading.innerHTML='<i class="fa-solid fa-spinner fa-spin mr-2"></i>실험 1·2를 함께 점검하고 있습니다.';result.classList.add('hidden');
+ try{
+  const data=await fetchFeedbackJSONP(buildCombinedFeedbackPrompt());
+  if(!data||data.ok===false)throw new Error(data?.error||data?.message||"AI 서버 오류");
+  const feedback=String(data.feedback||data.text||"").replace(/\r?\n+/g,' ').replace(/\s{2,}/g,' ').trim();
+  if(!feedback)throw new Error("피드백 내용이 없습니다.");
+  const m=feedback.match(/\[실험1\]\s*(.*?)\s*\[실험2\]\s*(.*)$/);
+  const r1=document.getElementById('exp1-result'),r2=document.getElementById('exp2-result');
+  document.getElementById('exp1-waiting').classList.add('hidden');document.getElementById('exp2-waiting').classList.add('hidden');
+  r1.textContent=m?m[1].trim():feedback;r2.textContent=m?m[2].trim():"피드백 내용을 구분하지 못했습니다.";r1.classList.remove('hidden');r2.classList.remove('hidden');
+  result.textContent="실험 1과 실험 2의 피드백이 각 실험 설계 영역에 표시되었습니다.";result.classList.remove('hidden');
+ }catch(e){console.error("AI feedback:",e);result.textContent="AI 피드백 요청에 실패했습니다: "+e.message;result.classList.remove('hidden')}
+ finally{loading.classList.add('hidden');btn.disabled=false}
+}
+async function submitFinalDataAndDownload(){
+ if(!isFirstSubmitted)return showMessage("먼저 1차 제출을 완료해주세요.");
+ if(!value('exp1-reflection')||!value('exp2-reflection'))return showMessage("피드백 반영 내용을 작성해주세요. 수정사항이 없으면 '없음'이라고 작성해주세요.");
+ const err=validateExperiment(1)||validateExperiment(2);if(err)return showMessage(err);
+ const ok=await submitData('최종 제출(수정본)');if(!ok)return;
+ const e1=getExperimentData(1),e2=getExperimentData(2),fmt=s=>s.map((x,i)=>`  ${i+1}. ${x}`).join("\n");
+ const txt=`[반응 속도 탐구 프로젝트 핵심 내용 요약]\n1. 탐구 주제: ${value('topic')}\n- 탐구 동기: ${value('motive')}\n- 탐구 목적: ${value('purpose')}\n\n2. 실험 Ⅰ 설계\n- 탐구 가설: ${e1.hypothesis}\n- 조작 변인: ${e1.independentVariable}\n- 조건값: ${e1.conditions.join(", ")}\n- 종속 변인: ${e1.dependentVariable}\n- 탐구 과정:\n${fmt(e1.steps)}\n- 그래프 축: X축(${e1.xAxis}) / Y축(${e1.yAxis})\n\n3. 실험 Ⅱ 설계\n- 탐구 가설: ${e2.hypothesis}\n- 조작 변인: ${e2.independentVariable}\n- 조건값: ${e2.conditions.join(", ")}\n- 종속 변인: ${e2.dependentVariable}\n- 탐구 과정:\n${fmt(e2.steps)}\n- 그래프 축: X축(${e2.xAxis}) / Y축(${e2.yAxis})\n`;
+ const blob=new Blob([txt],{type:'text/plain;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`(${value('classroom')}) ${value('studentId')} ${value('studentName')}_반응속도탐구보고서.txt`;a.click();URL.revokeObjectURL(url);finalSubmitCompleted=true;showMessage("최종 전송과 요약 파일 생성이 완료되었습니다.");
+}
+</script>
+</body></html>
